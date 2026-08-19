@@ -1,0 +1,84 @@
+#include "heap.h"
+#include <stdbool.h>
+
+// check if node a is less then node b, if equale compare thier id's
+static bool	is_less(t_heap *heap, int a, int b)
+{
+	if (!heap)
+		return (false);
+	if (a < 0 || a >= heap->size)
+		return (false);
+	if (b < 0 || b >= heap->size)
+		return (false);
+	if (heap->orders[a].key != heap->orders[b].key)
+		return (heap->orders[a].key < heap->orders[b].key);
+	return (heap->orders[a].id < heap->orders[b].id);
+}
+
+// sort the heap upward, from bottom of the heap to the peak
+static void	heapify_up(t_heap *heap)
+{
+	t_order	tmp;
+	int		i;
+	int		p;
+
+	i = heap->size - 1;
+	p = (i - 1) / 2;
+	while (i >= 0 && is_less(heap, i, p))
+	{
+		tmp = heap->orders[p];
+		heap->orders[p] = heap->orders[i];
+		heap->orders[i] = tmp;
+		i = p;
+		p = (i - 1) / 2;
+	}
+}
+
+// sort the heap downward,
+// replacing the parent with children until the parent is the smallest
+static void	heapify_down(t_heap *heap)
+{
+	int		i;
+	int		smallest;
+	t_order	tmp;
+
+	i = 0;
+	while (1)
+	{
+		smallest = i;
+		if ((i * 2) + 1 < heap->size && is_less(heap, (i * 2) + 1, smallest))
+			smallest = (i * 2) + 1;
+		if ((i * 2) + 2 < heap->size && is_less(heap, (i * 2) + 2, smallest))
+			smallest = (i * 2) + 2;
+		if (i == smallest)
+			break ;
+		tmp = heap->orders[smallest];
+		heap->orders[smallest] = heap->orders[i];
+		heap->orders[i] = tmp;
+		i = smallest;
+	}
+}
+
+// push the node to the heap, and sort it
+void	push_heap(t_heap *heap, int key, int id)
+{
+	if (!heap || heap->size >= heap->capacity)
+		return ;
+	heap->orders[heap->size] = (t_order){key, id};
+	heap->size++;
+	heapify_up(heap);
+}
+
+// pop the node from the heap, and sort it
+int	pop_heap(t_heap *heap)
+{
+	int	id;
+
+	if (!heap || heap->size == 0)
+		return (-1);
+	id = heap->orders[0].id;
+	heap->orders[0] = heap->orders[heap->size - 1];
+	heap->size--;
+	heapify_down(heap);
+	return (id);
+}
