@@ -7,18 +7,19 @@ void	report_task(t_table *table, int id, int task)
 
 	time = get_time_ms() - table->monitor->time_ms;
 	pthread_mutex_lock(&table->logger_mutex);
-	if (task == ACQUIRING)
+	if (task == COMPILING)
 	{
-		printf(GREEN "%ld %d has taken a dongle\n" RESET, time, id);
-		printf(GREEN "%ld %d has taken a dongle\n" RESET, time, id);
+		printf("%ld %d has taken a dongle\n", time, id);
+		time = get_time_ms() - table->monitor->time_ms;
+		printf("%ld %d has taken a dongle\n", time, id);
+		time = get_time_ms() - table->monitor->time_ms;
+		printf("%ld %d is compiling\n", time, id);
 	}
-	else if (task == COMPILING)
-		printf(GREEN "%ld %d is compiling\n" RESET, time, id);
 	else if (task == DEBUGGING)
-		printf(GREEN "%ld %d is debugging\n" RESET, time, id);
+		printf("%ld %d is debugging\n", time, id);
 	else if (task == REFACTORING)
-		printf(GREEN "%ld %d is refactoring\n" RESET, time, id);
+		printf("%ld %d is refactoring\n", time, id);
 	else if (task == BURNOUT)
-		printf(RED "%ld %d burned out\n" RESET, time, id);
+		printf("%ld %d burned out\n", time, id);
 	pthread_mutex_unlock(&table->logger_mutex);
 }

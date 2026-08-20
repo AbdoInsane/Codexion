@@ -1,11 +1,33 @@
 #include "coder/coder.h"
 #include "dongle.h"
 
+static int	wait_for_dongl(t_coder *coder, t_dongle *dongle)
+{
+	t_order	*turn;
+
+	turn = &dongle->heap->orders[0];
+	while ((turn->id != coder->id || dongle->state == ACQUIRED)
+		&& !is_stop(coder->table))
+		pthread_cond_wait(&dongle->cond, &dongle->mutex);
+	if (is_stop(coder->table))
+		return (1);
+	while (get_time_ms() < dongle->cooldown_end_ms && dongle->state == COOLDOWN)
+	{
+		pthread_mutex_unlock(&dongle->mutex);
+		if (wait_ms(coder->table, &dongle->mutex, &dongle->cond,
+				dongle->cooldown_end_ms - get_time_ms()))
+			break ;
+		pthread_mutex_lock(&dongle->mutex);
+	}
+	if (is_stop(coder->table))
+		return (1);
+	return (0);
+}
+
 static int	dongle_request(t_dongle *dongle, t_coder *coder,
 		t_scheduler scheduler)
 {
-	long			key;
-	struct timespec	deadline;
+	long	key;
 
 	if (scheduler == EDF)
 		key = coder->last_compile_time_ms
@@ -14,19 +36,10 @@ static int	dongle_request(t_dongle *dongle, t_coder *coder,
 		key = get_time_ms();
 	pthread_mutex_lock(&dongle->mutex);
 	push_heap(dongle->heap, key, coder->id);
-	while ((dongle->heap->orders[0].id != coder->id
-			|| dongle->state == ACQUIRED) && !is_stop(coder->table))
-		pthread_cond_wait(&dongle->cond, &dongle->mutex);
-	if (is_stop(coder->table))
-		return (pthread_mutex_unlock(&dongle->mutex), 1);
-	while (get_time_ms() < dongle->cooldown_end_ms && dongle->state == COOLDOWN
-		&& !is_stop(coder->table))
-	{
-		deadline.tv_sec = dongle->cooldown_end_ms / 1000;
-		deadline.tv_nsec = (dongle->cooldown_end_ms % 1000) * 1000000;
-		pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &deadline);
-	}
-	if (is_stop(coder->table))
+	pthread_mutex_unlock(&dongle->mutex);
+	usleep(10);
+	pthread_mutex_lock(&dongle->mutex);
+	if (wait_for_dongl(coder, dongle))
 		return (pthread_mutex_unlock(&dongle->mutex), 1);
 	pop_heap(dongle->heap);
 	dongle->state = ACQUIRED;

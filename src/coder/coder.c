@@ -1,6 +1,15 @@
 #include "coder.h"
 #include "logger/log.h"
 
+void	set_coder_task(t_coder *coder, t_task task)
+{
+	pthread_mutex_lock(&coder->mutex);
+	coder->state = task;
+	if (task == COMPILING)
+		coder->last_compile_time_ms = get_time_ms();
+	pthread_mutex_unlock(&coder->mutex);
+}
+
 void	*coder_routine(void *arg)
 {
 	t_coder		*self;
@@ -16,27 +25,27 @@ void	*coder_routine(void *arg)
 	{
 		if (acquire_dongles(self, table->config->scheduler))
 			return (NULL);
-		self->state = ACQUIRING;
+		set_coder_task(self, COMPILING);
 		report_task(table, self->id, self->state);
-		self->state = COMPILING;
-		self->last_compile_time_ms = get_time_ms();
-		report_task(table, self->id, self->state);
-		if (sleep_or_stop(table, table->config->time_to_compile))
+		if (wait_ms(table, &table->mutex, &table->cond,
+				table->config->time_to_compile))
 			return (NULL);
 		dongle_release(self);
-		self->state = DEBUGGING;
+		set_coder_task(self, DEBUGGING);
 		report_task(table, self->id, self->state);
-		if (sleep_or_stop(table, table->config->time_to_debug))
+		if (wait_ms(table, &table->mutex, &table->cond,
+				table->config->time_to_debug))
 			return (NULL);
-		self->state = REFACTORING;
+		set_coder_task(self, REFACTORING);
 		report_task(table, self->id, self->state);
-		if (sleep_or_stop(table, table->config->time_to_refactor))
+		if (wait_ms(table, &table->mutex, &table->cond,
+				table->config->time_to_refactor))
 			return (NULL);
-		self->state = WAITING;
+		set_coder_task(self, WAITING);
 		compiles++;
 	}
+	set_coder_task(self, FINISHED);
 	pthread_mutex_lock(&monitor->mutex);
-	self->state = FINISHED;
 	monitor->working_coders--;
 	pthread_mutex_unlock(&monitor->mutex);
 	return (self);
@@ -70,13 +79,13 @@ t_coder	*coder_init(t_table *table)
 	i = 0;
 	while (i < table->config->number_of_coders)
 	{
-		coders[i].id = i;
+		coders[i].id = i + 1;
 		coders[i].table = table;
 		coders[i].state = WAITING;
 		coders[i].last_compile_time_ms = 0;
 		coders[i].d_left = &table->dongles[i];
 		coders[i].d_right = &table->dongles[(i + 1) % size];
-		pthread_cond_init(&coders[i].cond, NULL);
+		pthread_mutex_init(&coders[i].mutex, NULL);
 		i++;
 	}
 	return (coders);

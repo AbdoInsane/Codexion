@@ -12,15 +12,17 @@ int	check_deadlines(t_table *table)
 	i = 0;
 	while (i < table->config->number_of_coders)
 	{
-		pthread_mutex_lock(&table->monitor->mutex);
+		pthread_mutex_lock(&table->coders[i].mutex);
 		state = table->coders[i].state;
 		last_compile = table->coders[i].last_compile_time_ms;
+		pthread_mutex_unlock(&table->coders[i].mutex);
+		pthread_mutex_lock(&table->monitor->mutex);
 		if (!last_compile)
 			last_compile = table->monitor->time_ms;
 		deadline = last_compile + table->config->time_to_burnout;
 		pthread_mutex_unlock(&table->monitor->mutex);
-		if (deadline <= get_time_ms() && state != FINISHED)
-			return (i);
+		if (deadline < get_time_ms() && state != FINISHED)
+			return (table->coders[i].id);
 		i++;
 	}
 	return (-1);

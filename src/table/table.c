@@ -76,21 +76,3 @@ void	table_destroy(t_table *table)
 	pthread_mutex_destroy(&table->mutex);
 	ft_free(&table->memory);
 }
-
-int	sleep_or_stop(t_table *table, long ms)
-{
-	struct timespec	deadline;
-	long			now;
-
-	now = get_time_ms();
-	deadline.tv_sec = (now + ms) / 1000;
-	deadline.tv_nsec = ((now + ms) % 1000) * 1000000;
-	pthread_mutex_lock(&table->mutex);
-	while (!table->stop)
-	{
-		if (pthread_cond_timedwait(&table->cond, &table->mutex, &deadline) != 0)
-			break ;
-	}
-	pthread_mutex_unlock(&table->mutex);
-	return (is_stop(table));
-}

@@ -21,7 +21,7 @@ typedef enum e_task
 typedef struct s_coder
 {
 	int				id;
-	pthread_cond_t	cond;
+	pthread_mutex_t	mutex;
 	t_task			state;
 	pthread_t		thread;
 	t_dongle		*d_left;
@@ -31,8 +31,8 @@ typedef struct s_coder
 	t_table			*table;
 }					t_coder;
 
+void				set_coder_task(t_coder *coder, t_task task);
 int					coder_start(t_table *table);
-void				coder_wait(void);
 t_coder				*coder_init(t_table *table);
 void				coder_destroy(t_table *table);
 

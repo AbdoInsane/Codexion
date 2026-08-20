@@ -32,7 +32,9 @@ int							table_start(t_table *table);
 void						table_destroy(t_table *table);
 void						set_stop(t_table *table);
 bool						is_stop(t_table *table);
+
 long						get_time_ms(void);
-int							sleep_or_stop(t_table *table, long ms);
+int							wait_ms(t_table *table, pthread_mutex_t *mutex,
+								pthread_cond_t *cond, long ms);
 
 #endif
