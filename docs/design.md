@@ -19,9 +19,9 @@
 	coder lifecycle (compile -> debug -> refactor -> repeat)
 	coder requesting dongles
 	coder coding
+	coder releasing dongles
 	coder debugging
 	coder refactoring
-	coder releasing dongles
 
 `dongle`:
 	The dongle module owns dongle state and operations, plus the per-dongle
@@ -76,27 +76,27 @@
               ┌──────────────────────┼────────────────────────┐
               │                      │                        │
               ▼                      ▼                        ▼
-      ┌──────────────┐      ┌────────────────┐       ┌────────────────┐
-      │    coder     │      │    monitor     │       │     parser     │
-      │──────────────│      │────────────────│       │────────────────│
-      │ coder_init   │      │ monitor_init   │       │ get_config     │
-      │ coder_start  │      │ monitor_thread │       │ config object  │
-      │ coder_routine│      │ check_deadlines│       └────────────────┘
-      │ set_coder_task│      │ set_stop       │
-      └───────┬──────┘      └───────┬────────┘
-              │                     │
-              ▼                     │
-      ┌──────────────┐              │
-      │    dongle    │              │
-      │──────────────│              │
-      │ dongle_init  │              │
-      │ acquire      │              │
-      │ release      │              │
-      │ heap         │              │
-      │ FIFO / EDF   │              │
-      └──────────────┘              │
-                                    │
-                ┌───────────────────┘
+      ┌────────────────┐      ┌────────────────┐       ┌────────────────┐
+      │    coder       │      │    monitor     │       │     parser     │
+      │────────────────│      │────────────────│       │────────────────│
+      │ coder_init     │      │ monitor_init   │       │ get_config     │
+      │ coder_start    │      │ monitor_thread │       │ config object  │
+      │ coder_routine  │      │ check_deadlines│       └────────────────┘
+      │ set_coder_task │      │ set_stop       │
+      └───────┬────────┘      └───────┬────────┘
+              │                       │
+              ▼                       │
+      ┌──────────────┐                │
+      │    dongle    │                │
+      │──────────────│                │
+      │ dongle_init  │                │
+      │ acquire      │                │
+      │ release      │                │
+      │ heap         │                │
+      │ FIFO / EDF   │                │
+      └──────────────┘                │
+                                    	│
+                ┌─────────────────────┘
                 ▼
         ┌───────────────────┐
         │ termination/state │

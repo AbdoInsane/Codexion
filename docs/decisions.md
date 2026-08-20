@@ -29,6 +29,15 @@ Fixed cooldown busy-wait spinloop with pthread_cond_timedwait.
 set_stop now broadcasts table->cond to wake sleeping coder threads.
 Each dongle broadcasts its cond on release, waking all waiting coders.
 
+[idea] Round-based dongle granting
+Problem: per-dongle heap allows first-pusher to be served immediately
+before other contenders arrive, defeating EDF priority.
+Fix: remove immediate-serve. Always wait for a broadcast after push.
+table_start broadcasts all dongle conds after starting threads (bootstrap).
+dongle_release broadcasts on free (normal path). Each broadcast triggers
+a "round" where all pending requests are checked, heap sorts them,
+and the top-priority coder is granted.
+
 [8/21]
 Added generic wait_ms() in time.c: pthread_cond_timedwait wrapper that locks
 and unlocks the passed mutex internally. Replaces sleep_or_stop() (removed
@@ -49,11 +58,63 @@ Known bug: wait_for_dongl does not re-verify heap position after the
 cooldown wait, so a late push with a lower key can be popped by the
 wrong coder.
 
-[idea] Round-based dongle granting
-Problem: per-dongle heap allows first-pusher to be served immediately
-before other contenders arrive, defeating EDF priority.
-Fix: remove immediate-serve. Always wait for a broadcast after push.
-table_start broadcasts all dongle conds after starting threads (bootstrap).
-dongle_release broadcasts on free (normal path). Each broadcast triggers
-a "round" where all pending requests are checked, heap sorts them,
-and the top-priority coder is granted.
+[8/21 – cooldown-before-acquire review]
+moved cooldown wait (wait_ms) to execute BEFORE the heap-position wait in
+wait_for_dongl. intent: the cooldown window acts as a gather period so
+other contenders can push before the position check.
+
+bug 1 – deadlock:
+wait_for_dongl is called with dongle->mutex held (from dongle_request after
+push_heap). the cooldown loop calls wait_ms, which internally does
+pthread_mutex_lock(mutex) on the same non-recursive mutex -> deadlock.
+fix: uncomment the pthread_mutex_unlock / pthread_mutex_lock around each
+wait_ms call; wait_ms manages its own lock/unlock cycle.
+
+bug 2 – acquire during active cooldown:
+after the position wait exits (thread at top, state != ACQUIRED), a new
+dongle_release can set state = COOLDOWN. the thread proceeds to pop_heap
+and set ACQUIRED without waiting for the new cooldown to expire.
+scenario: thread A holds dongle, thread B enters wait_for_dongl, no active
+cooldown -> phase 1 skips, phase 2 waits (state == ACQUIRED). A releases ->
+state = COOLDOWN. B wakes, state != ACQUIRED -> exits position wait -> acquires.
+but cooldown just started and hasn't expired.
+fix: add phase 3 after position wait — re-check for COOLDOWN and wait if
+active, then re-verify heap position (another coder may have pushed with a
+lower key during the phase 3 wait).
+
+remaining issues to address (edf testing + further fixes):
+- heap-position race: after any wait_ms (which releases the mutex), a late
+  push with a lower key can displace the current thread. pop_heap does not
+  verify orders[0].id == coder->id. needs re-verification after cooldown.
+- table.h still has stale sleep_or_stop declaration (removed from table.c).
+- log.c has leftover debug line (// return;).
+- monitor.c busy-loop with no usleep (100% cpu).
+- coder_destroy missing pthread_mutex_destroy for per-coder mutexes.
+- Makefile 'all' target runs the binary (should be removed).
+
+[edf test cases to validate]
+1. N=3, short time_to_burnout (e.g. 800ms), long compile/debug/refactor
+   (e.g. 400/200/200). EDF should prioritize the coder nearest to burnout.
+   if coder A compiled recently and B compiled long ago, B should get the
+   dongle first (lower deadline = earlier last_compile + burnout).
+   expected: B compiles before A, A's deadline pushed further out after B's
+   compile resets B's last_compile_time_ms.
+
+2. N=3, equal deadlines (all start at same time). EDF should fall back to
+   FIFO (earlier push gets served first). verify by checking log order —
+   first "has taken a dongle" lines should follow push order.
+
+3. N=3, one coder stuck waiting long (debug + refactor phase while others
+   compile repeatedly). that coder's deadline should approach burnout.
+   monitor should flag burnout if the coder doesn't compile before deadline.
+   verify: burnout message prints correct coder id, simulation stops.
+
+4. N=3, dongle_cooldown = 0. verify EDF still works without cooldown
+   interference — no false acquires during non-existent cooldown.
+
+5. N=3, large time_to_burnout (e.g. 10000ms). EDF should behave like FIFO
+   since all deadlines are far out. verify log order matches push order.
+
+6. N=2, EDF, time_to_burnout = 200ms, short phases (10/10/10).
+   both coders burn out quickly. verify monitor catches the first one to
+   expire and stops cleanly without deadlock.

@@ -16,7 +16,10 @@ static int	wait_for_dongl(t_coder *coder, t_dongle *dongle)
 		pthread_mutex_unlock(&dongle->mutex);
 		if (wait_ms(coder->table, &dongle->mutex, &dongle->cond,
 				dongle->cooldown_end_ms - get_time_ms()))
+		{
+			pthread_mutex_lock(&dongle->mutex);
 			break ;
+		}
 		pthread_mutex_lock(&dongle->mutex);
 	}
 	if (is_stop(coder->table))
@@ -36,9 +39,6 @@ static int	dongle_request(t_dongle *dongle, t_coder *coder,
 		key = get_time_ms();
 	pthread_mutex_lock(&dongle->mutex);
 	push_heap(dongle->heap, key, coder->id);
-	pthread_mutex_unlock(&dongle->mutex);
-	usleep(10);
-	pthread_mutex_lock(&dongle->mutex);
 	if (wait_for_dongl(coder, dongle))
 		return (pthread_mutex_unlock(&dongle->mutex), 1);
 	pop_heap(dongle->heap);
