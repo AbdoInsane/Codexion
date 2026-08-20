@@ -1,7 +1,6 @@
 #include "heap.h"
 #include <stdbool.h>
 
-// check if node a is less then node b, if equale compare thier id's
 static bool	is_less(t_heap *heap, int a, int b)
 {
 	if (!heap)
@@ -15,7 +14,6 @@ static bool	is_less(t_heap *heap, int a, int b)
 	return (heap->orders[a].id < heap->orders[b].id);
 }
 
-// sort the heap upward, from bottom of the heap to the peak
 static void	heapify_up(t_heap *heap)
 {
 	t_order	tmp;
@@ -34,8 +32,6 @@ static void	heapify_up(t_heap *heap)
 	}
 }
 
-// sort the heap downward,
-// replacing the parent with children until the parent is the smallest
 static void	heapify_down(t_heap *heap)
 {
 	int		i;
@@ -59,8 +55,7 @@ static void	heapify_down(t_heap *heap)
 	}
 }
 
-// push the node to the heap, and sort it
-void	push_heap(t_heap *heap, int key, int id)
+void	push_heap(t_heap *heap, long key, int id)
 {
 	if (!heap || heap->size >= heap->capacity)
 		return ;
@@ -69,7 +64,6 @@ void	push_heap(t_heap *heap, int key, int id)
 	heapify_up(heap);
 }
 
-// pop the node from the heap, and sort it
 int	pop_heap(t_heap *heap)
 {
 	int	id;

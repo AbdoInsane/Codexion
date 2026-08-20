@@ -1,7 +1,7 @@
 #include "memory.h"
 
 // Adds a new allocation to the collector's linked list
-static int	ft_collecte(t_memory **head, void *data)
+static int	ft_collecte(t_memory **memory, void *data)
 {
 	t_memory	*new;
 
@@ -9,14 +9,14 @@ static int	ft_collecte(t_memory **head, void *data)
 	if (!new)
 		return (1);
 	new->data = data;
-	new->next = *head;
-	*head = new;
+	new->next = *memory;
+	*memory = new;
 	return (0);
 }
 
 // Replaces the standard malloc function with a custom collector-based version
 // Allocates memory and adds it to the collector's linked list
-void	*ft_malloc(t_memory **head, size_t size)
+void	*ft_malloc(t_memory **memory, size_t size)
 {
 	void	*mem;
 
@@ -25,7 +25,7 @@ void	*ft_malloc(t_memory **head, size_t size)
 	mem = (void *)malloc(size);
 	if (!mem)
 		return (NULL);
-	if (ft_collecte(head, mem))
+	if (ft_collecte(memory, mem))
 	{
 		free(mem);
 		return (NULL);
@@ -34,14 +34,14 @@ void	*ft_malloc(t_memory **head, size_t size)
 }
 
 // Frees all memory allocated by the collector's linked list
-int	ft_free(t_memory **head)
+int	ft_free(t_memory **memory)
 {
 	t_memory	*current;
 	t_memory	*prev;
 
-	if (!head || !*head)
+	if (!memory || !*memory)
 		return (-1);
-	current = *head;
+	current = *memory;
 	prev = NULL;
 	while (current)
 	{
@@ -50,5 +50,5 @@ int	ft_free(t_memory **head)
 		free(prev->data);
 		free(prev);
 	}
-	return (-1);
+	return (0);
 }

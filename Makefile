@@ -5,10 +5,11 @@ OBJ_DIR		:= build
 
 MODULES		:= 	coder \
 				dongle \
+				logger \
 			   	memory \
 				monitor \
 				parser \
-				scheduler
+				table \
 
 MAIN		:= $(SRC_DIR)/main.c
 SRCS		:= $(MAIN) $(foreach module,$(MODULES),$(wildcard $(SRC_DIR)/$(module)/*.c))

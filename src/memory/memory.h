@@ -9,7 +9,7 @@ typedef struct s_memory
 	struct s_memory	*next;
 }					t_memory;
 
-void				*ft_malloc(t_memory **head, size_t size);
-int					ft_free(t_memory **head);
+void				*ft_malloc(t_memory **memory, size_t size);
+int					ft_free(t_memory **memory);
 
 #endif

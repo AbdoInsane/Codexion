@@ -1,9 +1,10 @@
 #ifndef CODER_H
 # define CODER_H
 
-# include "contex.h"
 # include "dongle/dongle.h"
+# include "monitor/monitor.h"
 # include "parser/parser.h"
+# include "table/table.h"
 # include <pthread.h>
 
 typedef enum e_task
@@ -11,21 +12,28 @@ typedef enum e_task
 	WAITING,
 	COMPILING,
 	DEBUGGING,
-	REFACTORING
+	REFACTORING,
+	ACQUIRING,
+	BURNOUT,
+	FINISHED,
 }					t_task;
 
 typedef struct s_coder
 {
 	int				id;
+	pthread_cond_t	cond;
 	t_task			state;
 	pthread_t		thread;
 	t_dongle		*d_left;
 	t_dongle		*d_right;
-	unsigned int	last_compile_time_ms;
+	long			last_compile_time_ms;
+
+	t_table			*table;
 }					t_coder;
 
-t_coder				*coder_init(t_contex *contex);
-void				coder_start(void);
+int					coder_start(t_table *table);
 void				coder_wait(void);
-void				coder_destroy(void);
+t_coder				*coder_init(t_table *table);
+void				coder_destroy(t_table *table);
+
 #endif

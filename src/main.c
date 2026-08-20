@@ -1,17 +1,13 @@
-#include "contex.h"
-#include "memory/memory.h"
-#include "parser/parser.h"
-#include "scheduler/scheduler.h"
+#include "table/table.h"
 
 int	main(int argc, char **argv)
 {
-	t_contex	contex;
+	t_table	*table;
 
-	contex = (t_contex){0};
-	contex.config = get_config(argc, argv, &contex.memory);
-	if (!contex.config)
-		return (ft_free(&contex.memory));
-	scheduler_boot(&contex);
-	ft_free(&contex.memory);
+	table = table_init(argc, argv);
+	if (!table)
+		return (0);
+	table_start(table);
+	table_destroy(table);
 	return (0);
 }

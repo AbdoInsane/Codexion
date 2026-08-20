@@ -1,28 +1,86 @@
+#include "coder/coder.h"
 #include "dongle.h"
 
-// init dongle to each coder
-t_dongle	*dongle_init(t_contex *contex)
+static int	dongle_request(t_dongle *dongle, t_coder *coder,
+		t_scheduler scheduler)
 {
-	t_dongle	*dongles;
-	int			size;
-	int			i;
+	long			key;
+	struct timespec	deadline;
 
-	size = contex->config->number_of_coders;
-	dongles = ft_malloc(&contex->memory, sizeof(t_dongle) * size);
-	if (!dongles)
-		return (NULL);
-	i = 0;
-	while (i < size)
+	if (scheduler == EDF)
+		key = coder->last_compile_time_ms
+			+ coder->table->config->time_to_burnout;
+	else
+		key = get_time_ms();
+	pthread_mutex_lock(&dongle->mutex);
+	push_heap(dongle->heap, key, coder->id);
+	while ((dongle->heap->orders[0].id != coder->id
+			|| dongle->state == ACQUIRED) && !is_stop(coder->table))
+		pthread_cond_wait(&dongle->cond, &dongle->mutex);
+	if (is_stop(coder->table))
+		return (pthread_mutex_unlock(&dongle->mutex), 1);
+	while (get_time_ms() < dongle->cooldown_end_ms && dongle->state == COOLDOWN
+		&& !is_stop(coder->table))
 	{
-		dongles[i].id = i;
-		dongles[i].state = FREE;
-		pthread_mutex_init(&dongles[i].mutex, NULL);
-		pthread_cond_init(&dongles[i].cond, NULL);
-		i++;
+		deadline.tv_sec = dongle->cooldown_end_ms / 1000;
+		deadline.tv_nsec = (dongle->cooldown_end_ms % 1000) * 1000000;
+		pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &deadline);
 	}
-	return (dongles);
+	if (is_stop(coder->table))
+		return (pthread_mutex_unlock(&dongle->mutex), 1);
+	pop_heap(dongle->heap);
+	dongle->state = ACQUIRED;
+	pthread_mutex_unlock(&dongle->mutex);
+	return (0);
 }
 
-void	dongle_acquire(void); // acquire dongle to a coder
-void	dongle_release(void); // release dongle from a coder
-void	dongle_destroy(void); // destroy dongle resouces
+int	acquire_dongles(t_coder *coder, t_scheduler sched)
+{
+	t_dongle	*first;
+	t_dongle	*second;
+
+	if (coder->d_left->id < coder->d_right->id)
+	{
+		first = coder->d_left;
+		second = coder->d_right;
+	}
+	else
+	{
+		first = coder->d_right;
+		second = coder->d_left;
+	}
+	if (dongle_request(first, coder, sched))
+		return (1);
+	if (dongle_request(second, coder, sched))
+		return (1);
+	return (0);
+}
+
+void	dongle_release(t_coder *coder)
+{
+	pthread_mutex_lock(&coder->d_left->mutex);
+	coder->d_left->state = COOLDOWN;
+	coder->d_left->cooldown_end_ms = get_time_ms()
+		+ coder->table->config->dongle_cooldown;
+	pthread_mutex_unlock(&coder->d_left->mutex);
+	pthread_cond_broadcast(&coder->d_left->cond);
+	pthread_mutex_lock(&coder->d_right->mutex);
+	coder->d_right->state = COOLDOWN;
+	coder->d_right->cooldown_end_ms = get_time_ms()
+		+ coder->table->config->dongle_cooldown;
+	pthread_mutex_unlock(&coder->d_right->mutex);
+	pthread_cond_broadcast(&coder->d_right->cond);
+}
+
+void	dongle_destroy(t_table *table)
+{
+	int	i;
+
+	i = 0;
+	while (i < table->config->number_of_coders)
+	{
+		pthread_cond_destroy(&table->dongles[i].cond);
+		pthread_mutex_destroy(&table->dongles[i].mutex);
+		i++;
+	}
+}
