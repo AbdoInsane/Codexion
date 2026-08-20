@@ -1,20 +1,22 @@
 `parser`:
 	Responsible for turning program arguments/configuration into a validated configuration.
 
-`scheduler`:
-	The project's core module.
+`table`:
+	The orchestrator module. Owns config, coders, dongles, monitor and the
+	global stop flag.
 
-	simulation_init()
-	simulation_start()
-	simulation_wait()
-	simulation_destroy()
+	table_init()
+	table_start()
+	table_destroy()
+	set_stop()
+	is_stop()
 
 `coder`:
 	Everything specific to a coder:
 
 	coder initialization
 	coder thread
-	coder lifecycle
+	coder lifecycle (compile -> debug -> refactor -> repeat)
 	coder requesting dongles
 	coder coding
 	coder debugging
@@ -22,12 +24,38 @@
 	coder releasing dongles
 
 `dongle`:
-	The dongle module own dongle state and operations.
+	The dongle module owns dongle state and operations, plus the per-dongle
+	heap used for FIFO/EDF arbitration.
 
 	dongle_init()
-	dongle_acquire()
+	acquire_dongles()
 	dongle_release()
 	dongle_destroy()
+	push_heap() / pop_heap()
+
+`monitor`:
+	Watches deadlines and detects burnout, terminates the simulation.
+
+	monitor_init()
+	monitor_start()
+	monitor_thread()
+	check_deadlines()
+	monitor_destroy()
+
+`logger`:
+	Serialized plain-text task reporting.
+
+	report_task()
+
+`memory`:
+	Single-block allocation tracking.
+
+	ft_malloc()
+	ft_free()
+
+`time`:
+	get_time_ms()
+	wait_ms()
 
 
                               ┌──────────────┐
@@ -36,53 +64,57 @@
                               └──────┬───────┘
                                      │
                                      ▼
-                         ┌─────────────────────┐
-                         │     simulation      │
-                         │─────────────────────│
-                         │ init                │
-                         │ start               │
-                         │ wait                │
-                         │ shutdown            │
-                         └──────────┬──────────┘
+                          ┌─────────────────────┐
+                          │       table         │
+                          │─────────────────────│
+                          │ init                │
+                          │ start               │
+                          │ destroy             │
+                          │ stop flag           │
+                          └──────────┬──────────┘
+                                     │
+              ┌──────────────────────┼────────────────────────┐
+              │                      │                        │
+              ▼                      ▼                        ▼
+      ┌──────────────┐      ┌────────────────┐       ┌────────────────┐
+      │    coder     │      │    monitor     │       │     parser     │
+      │──────────────│      │────────────────│       │────────────────│
+      │ coder_init   │      │ monitor_init   │       │ get_config     │
+      │ coder_start  │      │ monitor_thread │       │ config object  │
+      │ coder_routine│      │ check_deadlines│       └────────────────┘
+      │ set_coder_task│      │ set_stop       │
+      └───────┬──────┘      └───────┬────────┘
+              │                     │
+              ▼                     │
+      ┌──────────────┐              │
+      │    dongle    │              │
+      │──────────────│              │
+      │ dongle_init  │              │
+      │ acquire      │              │
+      │ release      │              │
+      │ heap         │              │
+      │ FIFO / EDF   │              │
+      └──────────────┘              │
                                     │
-             ┌──────────────────────┼────────────────────────┐
-             │                      │                        │
-             ▼                      ▼                        ▼
-     ┌──────────────┐      ┌────────────────┐       ┌────────────────┐
-     │    coder     │      │    scheduler   │       │    monitor     │
-     │──────────────│      │────────────────│       │────────────────│
-     │ coder_init   │      │ scheduler_init │       │ monitor_init   │
-     │ coder_thread │      │ scheduler_add  │       │ monitor_thread │
-     │ lifecycle    │      │ scheduler_next │       │ burnout check  │
-     │ acquire      │      │ scheduler_stop │       │ termination    │
-     └───────┬──────┘      └───────┬────────┘       └───────┬────────┘
-             │                     │                        │
-             │                     │                        │
-             ▼                     │                        │
-     ┌──────────────┐              │                        │
-     │    dongle    │◄─────────────┘                        │
-     │──────────────│                                       │
-     │ init         │                                       │
-     │ acquire      │                                       │
-     │ release      │                                       │
-     │ state        │                                       │
-     └──────────────┘                                       │
-                                                            │
-                         ┌──────────────────────────────────┘
-                         │
-                         ▼
-                ┌───────────────────┐
-                │ termination/state │
-                │ synchronization   │
-                └───────────────────┘
+                ┌───────────────────┘
+                ▼
+        ┌───────────────────┐
+        │ termination/state │
+        │ synchronization   │
+        └───────────────────┘
 
 
-                 SCHEDULER IMPLEMENTATION
-                 =========================
+                 DONGLE SCHEDULING
+                 =================
+
+              Each dongle owns a min-heap (max 2 entries, the two coders
+              sharing that dongle). A coder pushes its request key, then
+              waits until its entry is at the top and the dongle is not
+              ACQUIRED. It pops only after re-verifying its position.
 
                        ┌──────────────┐
-                       │   scheduler  │
-                       │   interface  │
+                       │   per-dongle │
+                       │     heap     │
                        └──────┬───────┘
                               │
                      ┌────────┴────────┐
@@ -91,13 +123,17 @@
               ┌─────────────┐   ┌─────────────┐
               │     FIFO    │   │     EDF     │
               │─────────────│   │─────────────│
-              │ arrival     │   │ deadline    │
-              │ ordering    │   │ ordering    │
+              │ key =       │   │ key =       │
+              │ get_time_ms │   │ last_compile│
+              │             │   │ + burnout   │
               └─────────────┘   └─────────────┘
+
+              Deadlock prevention: coders always acquire dongles in
+              ascending id order (lower-indexed dongle first).
 
 
                  INPUT / CONFIGURATION
-                 ======================
+                 =====================
 
                        ┌──────────────┐
                        │    parser    │
@@ -113,7 +149,7 @@
                        └──────┬───────┘
                               │
                               ▼
-                         simulation
+                          table (simulation)
 
 
                  RESOURCE MANAGEMENT
@@ -122,32 +158,30 @@
                        ┌──────────────┐
                        │    memory    │
                        │──────────────│
-                       │ allocations  │
+                       │ ft_malloc    │
+                       │ ft_free      │
                        │ cleanup      │
-                       │ destruction  │
                        └──────┬───────┘
                               │
-             ┌────────────────┼─────────────────┐
-             │                │                 │
-             ▼                ▼                 ▼
-           coder          scheduler          monitor
-             │                │                 │
-             └────────────────┼─────────────────┘
-                              │
-                              ▼
-                            dongle
+              ┌────────────────┼─────────────────┐
+              │                │                 │
+              ▼                ▼                 ▼
+            coder          dongle            monitor
+              │                │                 │
+              └────────────────┼─────────────────┘
+                               │
+                               ▼
+                            table
 
 
                  UTILITIES
                  =========
 
                        ┌──────────────┐
-                       │    utils     │
+                       │     time     │
                        │──────────────│
-                       │ ft_isdigit   │
-                       │ ft_strdup    │
-                       │ small helpers│
-                       └──────────────┘
+                       │ get_time_ms  │
+                       │ wait_ms      │
+                       └──────┬───────┘
                               │
-                              ▼
-                     used where needed
+                      used where needed
