@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   coder.h                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abait-mo <abait-mo@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/24 08:11:28 by abait-mo          #+#    #+#             */
+/*   Updated: 2026/08/24 08:11:28 by abait-mo         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef CODER_H
 # define CODER_H
 
@@ -34,6 +46,7 @@ typedef struct s_coder
 void				set_coder_task(t_coder *coder, t_task task);
 int					coder_start(t_table *table);
 t_coder				*coder_init(t_table *table);
+void				*coder_routine(void *arg);
 void				coder_destroy(t_table *table);
 
 #endif
