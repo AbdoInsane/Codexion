@@ -1,5 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   coder.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: abait-mo <abait-mo@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/08/24 08:11:25 by abait-mo          #+#    #+#             */
+/*   Updated: 2026/08/24 08:11:25 by abait-mo         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "coder.h"
 #include "logger/log.h"
+#include "table/table.h"
 
 void	set_coder_task(t_coder *coder, t_task task)
 {
@@ -10,56 +23,17 @@ void	set_coder_task(t_coder *coder, t_task task)
 	pthread_mutex_unlock(&coder->mutex);
 }
 
-void	*coder_routine(void *arg)
-{
-	t_coder		*self;
-	t_table		*table;
-	t_monitor	*monitor;
-	int			compiles;
-
-	compiles = 0;
-	self = (t_coder *)arg;
-	table = self->table;
-	monitor = table->monitor;
-	while (compiles < table->config->number_of_compiles_required)
-	{
-		if (acquire_dongles(self, table->config->scheduler))
-			return (NULL);
-		set_coder_task(self, COMPILING);
-		report_task(table, self->id, self->state);
-		if (wait_ms(table, &table->mutex, &table->cond,
-				table->config->time_to_compile))
-			return (NULL);
-		dongle_release(self);
-		set_coder_task(self, DEBUGGING);
-		report_task(table, self->id, self->state);
-		if (wait_ms(table, &table->mutex, &table->cond,
-				table->config->time_to_debug))
-			return (NULL);
-		set_coder_task(self, REFACTORING);
-		report_task(table, self->id, self->state);
-		if (wait_ms(table, &table->mutex, &table->cond,
-				table->config->time_to_refactor))
-			return (NULL);
-		set_coder_task(self, WAITING);
-		compiles++;
-	}
-	set_coder_task(self, FINISHED);
-	pthread_mutex_lock(&monitor->mutex);
-	monitor->working_coders--;
-	pthread_mutex_unlock(&monitor->mutex);
-	return (self);
-}
-
 int	coder_start(t_table *table)
 {
-	int	i;
+	t_coder	*coder;
+	int		i;
 
 	i = 0;
 	while (i < table->config->number_of_coders)
 	{
-		if (pthread_create(&table->coders[i].thread, NULL, coder_routine,
-				&table->coders[i]))
+		coder = &table->coders[i];
+		coder->last_compile_time_ms = table->monitor->time_ms;
+		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
 			return (1);
 		i++;
 	}
