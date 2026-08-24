@@ -18,21 +18,24 @@ static int	wait_for_dongl(t_coder *coder, t_dongle *dongle)
 	t_order	*turn;
 
 	turn = &dongle->heap->orders[0];
-	while ((turn->id != coder->id || dongle->state == ACQUIRED)
-		&& !is_stop(coder->table))
-		pthread_cond_wait(&dongle->cond, &dongle->mutex);
-	if (is_stop(coder->table))
-		return (1);
-	while (get_time_ms() < dongle->cooldown_end_ms && dongle->state == COOLDOWN)
+	while (!is_stop(coder->table))
 	{
-		pthread_mutex_unlock(&dongle->mutex);
-		if (wait_ms(coder->table, &dongle->mutex, &dongle->cond,
-				dongle->cooldown_end_ms - get_time_ms()))
+		if (dongle->state == COOLDOWN)
 		{
-			pthread_mutex_lock(&dongle->mutex);
-			break ;
+			while (get_time_ms() < dongle->cooldown_end_ms)
+			{
+				pthread_mutex_unlock(&dongle->mutex);
+				if (wait_ms(coder->table, &dongle->mutex, &dongle->cond,
+						dongle->cooldown_end_ms - get_time_ms()))
+					return (1);
+				pthread_mutex_lock(&dongle->mutex);
+			}
+			if (dongle->state == COOLDOWN)
+				dongle->state = FREE;
 		}
-		pthread_mutex_lock(&dongle->mutex);
+		if (turn->id == coder->id && dongle->state == FREE)
+			break ;
+		pthread_cond_wait(&dongle->cond, &dongle->mutex);
 	}
 	if (is_stop(coder->table))
 		return (1);
@@ -43,16 +46,24 @@ static int	dongle_request(t_dongle *dongle, t_coder *coder,
 		t_scheduler scheduler)
 {
 	long	key;
+	long	burnout_ms;
 
+	burnout_ms = coder->table->config->time_to_burnout;
+	pthread_mutex_lock(&dongle->mutex);
 	if (scheduler == EDF)
-		key = coder->last_compile_time_ms
-			+ coder->table->config->time_to_burnout;
+	{
+		key = coder->last_compile_time_ms + burnout_ms;
+	}
 	else
 		key = get_time_ms();
-	pthread_mutex_lock(&dongle->mutex);
+	// printf(YEL "%d > %d\n" RESET, coder->id, dongle->id);
 	push_heap(dongle->heap, key, coder->id);
+	pthread_mutex_unlock(&dongle->mutex);
+	usleep(100);
+	pthread_mutex_lock(&dongle->mutex);
 	if (wait_for_dongl(coder, dongle))
 		return (pthread_mutex_unlock(&dongle->mutex), 1);
+	// printf(GRN "%d < %d\n" RESET, coder->id, dongle->id);
 	pop_heap(dongle->heap);
 	dongle->state = ACQUIRED;
 	pthread_mutex_unlock(&dongle->mutex);
@@ -83,18 +94,20 @@ int	acquire_dongles(t_coder *coder, t_scheduler sched)
 
 void	dongle_release(t_coder *coder)
 {
+	long	cooldown_ms;
+
+	// broadcast coders
+	cooldown_ms = coder->table->config->dongle_cooldown;
 	pthread_mutex_lock(&coder->d_left->mutex);
 	coder->d_left->state = COOLDOWN;
-	coder->d_left->cooldown_end_ms = get_time_ms()
-		+ coder->table->config->dongle_cooldown;
-	pthread_mutex_unlock(&coder->d_left->mutex);
+	coder->d_left->cooldown_end_ms = get_time_ms() + cooldown_ms;
 	pthread_cond_broadcast(&coder->d_left->cond);
+	pthread_mutex_unlock(&coder->d_left->mutex);
 	pthread_mutex_lock(&coder->d_right->mutex);
 	coder->d_right->state = COOLDOWN;
-	coder->d_right->cooldown_end_ms = get_time_ms()
-		+ coder->table->config->dongle_cooldown;
-	pthread_mutex_unlock(&coder->d_right->mutex);
+	coder->d_right->cooldown_end_ms = get_time_ms() + cooldown_ms;
 	pthread_cond_broadcast(&coder->d_right->cond);
+	pthread_mutex_unlock(&coder->d_right->mutex);
 }
 
 void	dongle_destroy(t_table *table)

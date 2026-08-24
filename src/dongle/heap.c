@@ -5,13 +5,12 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: abait-mo <abait-mo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/08/24 08:11:33 by abait-mo          #+#    #+#             */
-/*   Updated: 2026/08/24 08:11:33 by abait-mo         ###   ########.fr       */
+/*   Created: 2026/08/24 18:31:18 by abait-mo          #+#    #+#             */
+/*   Updated: 2026/08/24 18:31:18 by abait-mo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "heap.h"
-#include <stdbool.h>
 
 static bool	is_less(t_heap *heap, int a, int b)
 {

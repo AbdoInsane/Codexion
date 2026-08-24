@@ -13,6 +13,8 @@
 #ifndef HEAP_H
 # define HEAP_H
 
+# include <stdbool.h>
+
 typedef struct s_order
 {
 	long	key;
