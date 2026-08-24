@@ -21,11 +21,18 @@ CPPFLAGS	:= -I$(SRC_DIR)
 
 RM		:= rm -rf
 
-ARGS = 1 200 50 50 50 1 0 fifo
+I = 1
+
+ARGS_1 = 3 3000 200 200 200 2 800 edf
+ARGS_2 = 2 100 50 25 25 2 10 edf
+ARGS_3 = 3 3000 200 200 200 10 800 edf
+ARGS_4 = 3 3000 200 200 200 2 800 edf
 
 
 all: $(NAME)
-	@./$(NAME) $(ARGS)
+
+run:
+	./$(NAME) $(ARGS_$(I))
 
 $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -o $@
@@ -46,16 +53,16 @@ re: fclean all
 #=== Debugging
 
 grind: $(NAME)
-	@valgrind --leak-check=full ./$(NAME) $(ARGS)
+	@valgrind --leak-check=full ./$(NAME) $(ARGS_$(I))
 
 helgrind: $(NAME)
-	@valgrind --tool=helgrind --history-level=none ./$(NAME) $(ARGS)
+	@valgrind --tool=helgrind --history-level=none ./$(NAME) $(ARGS_$(I))
 
 mem: $(NAME)
-	@valgrind --tool=memcheck ./$(NAME) $(ARGS)
+	@valgrind --tool=memcheck ./$(NAME) $(ARGS_$(I)
 
 gdb: $(NAME)
-	@gdb -tui --args ./$(NAME) $(ARGS)
+	@gdb -tui --args ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
 
 
 #=== Formatting
