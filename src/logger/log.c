@@ -13,18 +13,20 @@
 #include "coder/coder.h"
 #include "log.h"
 
-void	report_task(t_table *table, int id, int task)
+static void	get_coder_data(t_coder *coder, int *id, t_task *task)
 {
-	long	time;
+	pthread_mutex_lock(&coder->mutex);
+	*task = coder->state;
+	*id = coder->id;
+	pthread_mutex_unlock(&coder->mutex);
+}
 
-	time = get_time_ms() - table->monitor->time_ms;
-	pthread_mutex_lock(&table->logger_mutex);
+static void	display_event(t_table *table, t_task task, long time, int id)
+{
 	if (task == COMPILING)
 	{
 		printf("%ld %d has taken a dongle\n", time, id);
-		time = get_time_ms() - table->monitor->time_ms;
 		printf("%ld %d has taken a dongle\n", time, id);
-		time = get_time_ms() - table->monitor->time_ms;
 		printf("%ld %d is compiling\n", time, id);
 	}
 	else if (task == DEBUGGING)
@@ -32,6 +34,23 @@ void	report_task(t_table *table, int id, int task)
 	else if (task == REFACTORING)
 		printf("%ld %d is refactoring\n", time, id);
 	else if (task == BURNOUT)
+	{
 		printf("%ld %d burned out\n", time, id);
+		set_stop(table);
+	}
+}
+
+void	report_task(t_table *table, t_coder *coder)
+{
+	long	time;
+	t_task	task;
+	int		id;
+
+	if (is_stop(table))
+		return ;
+	time = get_time_ms() - table->monitor->time_ms;
+	get_coder_data(coder, &id, &task);
+	pthread_mutex_lock(&table->logger_mutex);
+	display_event(table, task, time, id);
 	pthread_mutex_unlock(&table->logger_mutex);
 }
