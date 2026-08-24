@@ -34,7 +34,7 @@ int	check_deadlines(t_table *table)
 		deadline = last_compile + table->config->time_to_burnout;
 		pthread_mutex_unlock(&table->monitor->mutex);
 		if (deadline < get_time_ms() && state != FINISHED)
-			return (table->coders[i].id);
+			return (i);
 		i++;
 	}
 	return (-1);
@@ -43,6 +43,7 @@ int	check_deadlines(t_table *table)
 void	*monitor_routine(void *arg)
 {
 	t_monitor	*self;
+	t_coder		*burned_coder;
 	int			exit_status;
 
 	self = (t_monitor *)arg;
@@ -58,8 +59,9 @@ void	*monitor_routine(void *arg)
 		exit_status = check_deadlines(self->table);
 		if (exit_status != -1)
 		{
-			set_stop(self->table);
-			report_task(self->table, exit_status, BURNOUT);
+			burned_coder = &self->table->coders[exit_status];
+			set_coder_task(burned_coder, BURNOUT);
+			report_task(self->table, burned_coder);
 			return (NULL);
 		}
 	}
