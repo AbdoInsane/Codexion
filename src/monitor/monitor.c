@@ -10,68 +10,10 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "coder/coder.h"
-#include "logger/log.h"
 #include "monitor.h"
-
-int	check_deadlines(t_table *table)
-{
-	long	deadline;
-	long	last_compile;
-	t_task	state;
-	int		i;
-
-	i = 0;
-	while (i < table->config->number_of_coders)
-	{
-		pthread_mutex_lock(&table->coders[i].mutex);
-		state = table->coders[i].state;
-		last_compile = table->coders[i].last_compile_time_ms;
-		pthread_mutex_unlock(&table->coders[i].mutex);
-		pthread_mutex_lock(&table->monitor->mutex);
-		if (!last_compile)
-			last_compile = table->monitor->time_ms;
-		deadline = last_compile + table->config->time_to_burnout;
-		pthread_mutex_unlock(&table->monitor->mutex);
-		if (deadline < get_time_ms() && state != FINISHED)
-			return (i);
-		i++;
-	}
-	return (-1);
-}
-
-void	*monitor_routine(void *arg)
-{
-	t_monitor	*self;
-	t_coder		*burned_coder;
-	int			exit_status;
-
-	self = (t_monitor *)arg;
-	while (1)
-	{
-		pthread_mutex_lock(&self->mutex);
-		if (self->working_coders == 0)
-		{
-			pthread_mutex_unlock(&self->mutex);
-			break ;
-		}
-		pthread_mutex_unlock(&self->mutex);
-		exit_status = check_deadlines(self->table);
-		if (exit_status != -1)
-		{
-			burned_coder = &self->table->coders[exit_status];
-			set_coder_task(burned_coder, BURNOUT);
-			report_task(self->table, burned_coder);
-			return (NULL);
-		}
-	}
-	set_stop(self->table);
-	return (self);
-}
 
 int	monitor_start(t_table *table)
 {
-	table->monitor->time_ms = get_time_ms();
 	if (pthread_create(&table->monitor->thread, NULL, monitor_routine,
 			table->monitor))
 		return (1);
@@ -87,9 +29,11 @@ t_monitor	*monitor_init(t_table *table)
 		return (NULL);
 	monitor->time_ms = 0;
 	monitor->table = table;
+	monitor->started_coders = 0;
 	monitor->working_coders = table->config->number_of_coders;
 	pthread_cond_init(&monitor->cond, NULL);
 	pthread_mutex_init(&monitor->mutex, NULL);
+	pthread_cond_init(&monitor->start_cond, NULL);
 	return (monitor);
 }
 

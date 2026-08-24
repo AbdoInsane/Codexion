@@ -48,22 +48,29 @@ static int	dongle_request(t_dongle *dongle, t_coder *coder,
 	long	key;
 	long	burnout_ms;
 
-	burnout_ms = coder->table->config->time_to_burnout;
 	pthread_mutex_lock(&dongle->mutex);
+	burnout_ms = coder->table->config->time_to_burnout;
 	if (scheduler == EDF)
 	{
-		key = coder->last_compile_time_ms + burnout_ms;
+		pthread_mutex_lock(&coder->mutex);
+		if (coder->last_compile_time_ms)
+			key = coder->last_compile_time_ms + burnout_ms;
+		pthread_mutex_unlock(&coder->mutex);
 	}
 	else
 		key = get_time_ms();
-	// printf(YEL "%d > %d\n" RESET, coder->id, dongle->id);
+	// printf(YEL "%d > %d : %ld\n" RESET, coder->id, dongle->id,
+	// key-coder->table->monitor->time_ms);
+	fflush(stdout);
 	push_heap(dongle->heap, key, coder->id);
 	pthread_mutex_unlock(&dongle->mutex);
 	usleep(100);
 	pthread_mutex_lock(&dongle->mutex);
 	if (wait_for_dongl(coder, dongle))
 		return (pthread_mutex_unlock(&dongle->mutex), 1);
-	// printf(GRN "%d < %d\n" RESET, coder->id, dongle->id);
+	// printf(GRN "%d < %d: %ld\n" RESET, coder->id, dongle->id,
+	// key-coder->table->monitor->time_ms);
+	fflush(stdout);
 	pop_heap(dongle->heap);
 	dongle->state = ACQUIRED;
 	pthread_mutex_unlock(&dongle->mutex);
