@@ -14,15 +14,6 @@
 #include "logger/log.h"
 #include "table/table.h"
 
-void	set_coder_task(t_coder *coder, t_task task)
-{
-	pthread_mutex_lock(&coder->mutex);
-	coder->state = task;
-	if (task == COMPILING)
-		coder->last_compile_time_ms = get_time_ms();
-	pthread_mutex_unlock(&coder->mutex);
-}
-
 int	coder_start(t_table *table)
 {
 	t_coder	*coder;
@@ -32,7 +23,6 @@ int	coder_start(t_table *table)
 	while (i < table->config->number_of_coders)
 	{
 		coder = &table->coders[i];
-		coder->last_compile_time_ms = table->monitor->time_ms;
 		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
 			return (1);
 		i++;

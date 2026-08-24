@@ -6,11 +6,20 @@
 /*   By: abait-mo <abait-mo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/24 08:24:59 by abait-mo          #+#    #+#             */
-/*   Updated: 2026/08/24 08:24:59 by abait-mo         ###   ########.fr       */
+/*   Updated: 2026/08/24 15:52:15 by abait-mo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "coder.h"
+
+void	set_coder_task(t_coder *coder, t_task task)
+{
+	pthread_mutex_lock(&coder->mutex);
+	coder->state = task;
+	if (task == COMPILING)
+		coder->last_compile_time_ms = get_time_ms();
+	pthread_mutex_unlock(&coder->mutex);
+}
 
 static int	coder_task(t_coder *coder, t_task task)
 {
@@ -29,7 +38,7 @@ static int	coder_task(t_coder *coder, t_task task)
 	else
 		return (1);
 	set_coder_task(coder, task);
-	report_task(table, coder->id, coder->state);
+	report_task(table, coder);
 	if (wait_ms(table, &table->mutex, &table->cond, task_time_ms))
 		return (1);
 	return (0);
@@ -55,6 +64,9 @@ void	*coder_routine(void *arg)
 	compiles = 0;
 	self = (t_coder *)arg;
 	table = self->table;
+	pthread_mutex_lock(&self->mutex);
+	self->last_compile_time_ms = get_time_ms();
+	pthread_mutex_unlock(&self->mutex);
 	while (compiles < table->config->number_of_compiles_required)
 	{
 		if (acquire_dongles(self, table->config->scheduler))
