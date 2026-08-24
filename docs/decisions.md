@@ -92,6 +92,15 @@ remaining issues to address (edf testing + further fixes):
 - coder_destroy missing pthread_mutex_destroy for per-coder mutexes.
 - Makefile 'all' target runs the binary (should be removed).
 
+[8/24] - dongle.c hang root causes identified
+Critical hang causes not yet fixed:
+- A: wait_for_dongl line 35 sets state=FREE but omits pthread_cond_broadcast
+- B: dongle_request line 80 pop_heap removes top but omits broadcast to wake next waiter
+- C: acquire_dongles leaks first dongle on second dongle failure (no rollback)
+
+These three issues explain the observed deadlock/hang in EDF testing.
+Fix requires: (1) add broadcasts at A and B, (2) add release_single helper for C rollback.
+
 [edf test cases to validate]
 1. N=3, short time_to_burnout (e.g. 800ms), long compile/debug/refactor
    (e.g. 400/200/200). EDF should prioritize the coder nearest to burnout.
