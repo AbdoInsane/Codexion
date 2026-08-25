@@ -24,6 +24,7 @@ void	restore_dongle(t_coder *coder, t_dongle *curr_dongle)
 	pthread_mutex_lock(&dongle->mutex);
 	if (dongle->owner == coder->id)
 	{
+		// printf(RED "%d V %d\n" RESET, coder->id, dongle->id);
 		dongle->owner = 0;
 		dongle->state = FREE;
 		pthread_cond_broadcast(&dongle->cond);
@@ -87,9 +88,14 @@ int	dongle_request(t_dongle *dongle, t_coder *coder, t_scheduler scheduler)
 	else
 		key = get_time_ms();
 	pthread_mutex_lock(&dongle->mutex);
+	// printf(YEL "%ld %d > %d\n" RESET, key-coder->table->monitor->time_ms, coder->id, dongle->id);
 	push_heap(dongle->heap, key, coder->id);
+	pthread_mutex_unlock(&dongle->mutex);
+	usleep(100);
+	pthread_mutex_lock(&dongle->mutex);
 	if (wait_for_dongle(coder, dongle))
 		return (pthread_mutex_unlock(&dongle->mutex), 1);
+	// printf(GRN "%ld %d < %d\n" RESET, key-coder->table->monitor->time_ms, coder->id, dongle->id);
 	pop_heap(dongle->heap);
 	dongle->state = ACQUIRED;
 	dongle->owner = coder->id;
