@@ -13,6 +13,7 @@
 #include "coder/coder.h"
 #include "logger/log.h"
 #include "monitor.h"
+#include <unistd.h>
 
 static int	check_deadlines(t_table *table)
 {
@@ -28,9 +29,7 @@ static int	check_deadlines(t_table *table)
 		state = table->coders[i].state;
 		last_compile = table->coders[i].last_compile_time_ms;
 		pthread_mutex_unlock(&table->coders[i].mutex);
-		pthread_mutex_lock(&table->monitor->mutex);
 		deadline = last_compile + table->config->time_to_burnout;
-		pthread_mutex_unlock(&table->monitor->mutex);
 		if (deadline < get_time_ms() && state != FINISHED)
 			return (i);
 		i++;
@@ -60,31 +59,41 @@ static void	wait_for_coders(t_monitor *monitor)
 	pthread_mutex_unlock(&monitor->mutex);
 }
 
+static bool	all_finished(t_monitor *monitor)
+{
+	bool	done;
+
+	pthread_mutex_lock(&monitor->mutex);
+	done = (monitor->working_coders == 0);
+	pthread_mutex_unlock(&monitor->mutex);
+	return (done);
+}
+
+static void	handle_burnout(t_table *table, int index)
+{
+	t_coder	*burned_coder;
+
+	burned_coder = &table->coders[index];
+	set_coder_task(burned_coder, BURNOUT);
+	report_task(table, burned_coder);
+}
+
 void	*monitor_routine(void *arg)
 {
 	t_monitor	*self;
-	t_coder		*burned_coder;
 	int			exit_status;
 
 	self = (t_monitor *)arg;
 	wait_for_coders(self);
-	while (1)
+	while (!all_finished(self))
 	{
-		pthread_mutex_lock(&self->mutex);
-		if (self->working_coders == 0)
-		{
-			pthread_mutex_unlock(&self->mutex);
-			break ;
-		}
-		pthread_mutex_unlock(&self->mutex);
 		exit_status = check_deadlines(self->table);
 		if (exit_status != -1)
 		{
-			burned_coder = &self->table->coders[exit_status];
-			set_coder_task(burned_coder, BURNOUT);
-			report_task(self->table, burned_coder);
+			handle_burnout(self->table, exit_status);
 			return (NULL);
 		}
+		usleep(500);
 	}
 	set_stop(self->table);
 	return (self);

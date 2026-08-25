@@ -39,7 +39,11 @@ typedef struct s_dongle
 }					t_dongle;
 
 t_dongle			*dongle_init(t_table *table);
+int					dongle_request(t_dongle *dongle, t_coder *coder,
+						t_scheduler scheduler);
 int					acquire_dongles(t_coder *coder, t_scheduler sched);
+bool				is_dongles_acquired(t_coder *coder, t_dongle *first,
+						t_dongle *second);
 void				dongle_release(t_coder *coder);
 void				dongle_destroy(t_table *table);
 

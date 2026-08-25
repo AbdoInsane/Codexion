@@ -20,12 +20,12 @@
 
 bool	is_stop(t_table *table)
 {
-	bool	stoped;
+	bool	stopped;
 
 	pthread_mutex_lock(&table->mutex);
-	stoped = table->stop;
+	stopped = table->stop;
 	pthread_mutex_unlock(&table->mutex);
-	return (stoped);
+	return (stopped);
 }
 
 void	set_stop(t_table *table)
@@ -37,8 +37,15 @@ void	set_stop(t_table *table)
 	table->stop = true;
 	pthread_mutex_unlock(&table->mutex);
 	pthread_cond_broadcast(&table->cond);
+	pthread_cond_broadcast(&table->monitor->cond);
+	pthread_cond_broadcast(&table->monitor->start_cond);
 	while (i < table->config->number_of_coders)
-		pthread_cond_broadcast(&table->dongles[i++].cond);
+	{
+		pthread_mutex_lock(&table->dongles[i].mutex);
+		pthread_cond_broadcast(&table->dongles[i].cond);
+		pthread_mutex_unlock(&table->dongles[i].mutex);
+		i++;
+	}
 }
 
 int	table_start(t_table *table)
@@ -81,8 +88,8 @@ t_table	*table_init(int argc, char **argv)
 
 void	table_destroy(t_table *table)
 {
-	monitor_destroy(table);
 	coder_destroy(table);
+	monitor_destroy(table);
 	dongle_destroy(table);
 	pthread_cond_destroy(&table->cond);
 	pthread_mutex_destroy(&table->mutex);

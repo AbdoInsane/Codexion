@@ -72,21 +72,21 @@ static void	register_coder(t_coder *coder)
 void	*coder_routine(void *arg)
 {
 	t_coder	*self;
-	t_table	*table;
 	int		compiles;
+	int		failed;
 
 	self = (t_coder *)arg;
 	register_coder(self);
-	table = self->table;
 	compiles = 0;
-	while (compiles < table->config->number_of_compiles_required)
+	while (compiles < self->table->config->number_of_compiles_required)
 	{
-		if (acquire_dongles(self, table->config->scheduler))
-			return (NULL);
-		coder_task(self, COMPILING);
+		if (acquire_dongles(self, self->table->config->scheduler))
+			break ;
+		failed = coder_task(self, COMPILING);
 		dongle_release(self);
-		coder_task(self, DEBUGGING);
-		coder_task(self, REFACTORING);
+		if (failed || coder_task(self, DEBUGGING) || coder_task(self,
+				REFACTORING))
+			break ;
 		coder_task(self, WAITING);
 		compiles++;
 	}

@@ -46,11 +46,10 @@ void	report_task(t_table *table, t_coder *coder)
 	t_task	task;
 	int		id;
 
-	if (is_stop(table))
-		return ;
 	time = get_time_ms() - table->monitor->time_ms;
 	get_coder_data(coder, &id, &task);
 	pthread_mutex_lock(&table->logger_mutex);
-	display_event(table, task, time, id);
+	if (!is_stop(table))
+		display_event(table, task, time, id);
 	pthread_mutex_unlock(&table->logger_mutex);
 }

@@ -17,6 +17,7 @@
 # include "table/table.h"
 # include <stdio.h>
 
+# define RED "\033[31m"
 # define GRN "\e[0;32m"
 # define YEL "\e[0;33m"
 # define RESET "\e[0m"

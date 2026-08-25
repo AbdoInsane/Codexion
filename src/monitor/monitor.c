@@ -42,4 +42,5 @@ void	monitor_destroy(t_table *table)
 	pthread_join(table->monitor->thread, NULL);
 	pthread_mutex_destroy(&table->monitor->mutex);
 	pthread_cond_destroy(&table->monitor->cond);
+	pthread_cond_destroy(&table->monitor->start_cond);
 }

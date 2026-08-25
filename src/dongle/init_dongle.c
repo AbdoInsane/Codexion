@@ -15,7 +15,7 @@
 static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 {
 	dongle->id = i;
-	dongle->owner = -1;
+	dongle->owner = 0;
 	dongle->state = FREE;
 	dongle->cooldown_end_ms = 0;
 	pthread_mutex_init(&dongle->mutex, NULL);
@@ -24,7 +24,7 @@ static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 	if (!dongle->heap)
 		return (1);
 	dongle->heap->size = 0;
-	dongle->heap->capacity = 2;
+	dongle->heap->capacity = size;
 	dongle->heap->orders = ft_malloc(mem, sizeof(t_order) * size);
 	if (!dongle->heap->orders)
 		return (1);
