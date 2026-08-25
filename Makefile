@@ -59,7 +59,7 @@ helgrind: $(NAME)
 	@valgrind --tool=helgrind --history-level=none ./$(NAME) $(ARGS_$(I))
 
 mem: $(NAME)
-	@valgrind --tool=memcheck ./$(NAME) $(ARGS_$(I)
+	@valgrind --tool=memcheck ./$(NAME) $(ARGS_$(I))
 
 gdb: $(NAME)
 	@gdb -tui --args ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
@@ -71,4 +71,4 @@ format:
 	@c_formatter_42 $(MAIN) $(SRC_DIR)/*/*.h $(SRC_DIR)/*/*.c
 
 
-.PHONY: all clean fclean re grind helgrind mem gdb format
+.PHONY: all run clean fclean re grind helgrind mem gdb format

@@ -61,5 +61,9 @@ void	coder_destroy(t_table *table)
 
 	i = 0;
 	while (i < table->config->number_of_coders)
-		pthread_join(table->coders[i++].thread, NULL);
+	{
+		pthread_join(table->coders[i].thread, NULL);
+		pthread_mutex_destroy(&table->coders[i].mutex);
+		i++;
+	}
 }
