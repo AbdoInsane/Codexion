@@ -15,7 +15,7 @@
 static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 {
 	dongle->id = i;
-	dongle->owner = -1;
+	dongle->owner = 0;
 	dongle->state = FREE;
 	dongle->cooldown_end_ms = 0;
 	pthread_mutex_init(&dongle->mutex, NULL);
