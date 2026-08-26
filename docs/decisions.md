@@ -127,3 +127,70 @@ Fix requires: (1) add broadcasts at A and B, (2) add release_single helper for C
 6. N=2, EDF, time_to_burnout = 200ms, short phases (10/10/10).
    both coders burn out quickly. verify monitor catches the first one to
    expire and stops cleanly without deadlock.
+
+[info]
+Burnout time calculation
+```bash
+total_cycle = compile_time + debug_time + refactor_time
+if total_cycle > compile_time + cooldown_time:
+    burnout_time = total_cycle
+else:
+    if number_of_coders % 2:
+        burnout_time = (compile_time + cooldown_time) * 3
+    else:
+        burnout_time = (compile_time + cooldown_time) * 2
+```
+
+Example 1:
+```bash
+./codexion 5 3000 200 200 200 10 800 edf
+
+total_cycle = (200 + 200 + 200 + 800)
+max(total_cycle, (200 + 800)*3)
+burnout_time = 3000
+```
+
+Example 2:
+```bash
+./codexion 5 3000 200 2000 200 10 800 edf
+
+total_cycle = (200 + 2000 + 200 + 800)
+max(total_cycle, (200 + 800)*3)
+burnout_time = 3200
+```
+
+Example 3:
+```bash
+./codexion 12 400 500 50 50 5 100 edf
+
+total_cycle = (100 + 50 + 50 + 100) = 300
+compile_and_cooldown = (100 + 100)*2 = 400
+burnout_time = 400
+```
+
+Example 4:
+```bash
+./codexion 50 75 25 25 25 5 0 edf
+
+total_cycle = (25 + 25 + 25 + 0) = 75
+compile_and_cooldown = (25 + 0)*2 = 50
+burnout_time = 75
+```
+
+Example 5:
+```bash
+./codexion 2 360 100 1 1 3 80 edf
+
+total_cycle = (100 + 1 + 1 + 80) = 182
+compile_and_cooldown = (100 + 80)*2 = 360
+burnout_time = 360
+```
+
+Example 6:
+```bash
+./codexion 3 2100 200 100 100 2 500 edf
+
+total_cycle = (200 + 100 + 100 + 500) = 900
+compile_and_cooldown = (200 + 500)*3 = 2100
+burnout_time = 2100
+```
