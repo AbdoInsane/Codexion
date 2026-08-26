@@ -63,8 +63,7 @@ static void	wait_for_coders(t_monitor *monitor)
 void	*monitor_routine(void *arg)
 {
 	t_monitor	*self;
-	t_coder		*burned_coder;
-	int			exit_status;
+	int			burned_coder;
 
 	self = (t_monitor *)arg;
 	wait_for_coders(self);
@@ -77,12 +76,12 @@ void	*monitor_routine(void *arg)
 			break ;
 		}
 		pthread_mutex_unlock(&self->mutex);
-		exit_status = check_deadlines(self->table);
-		if (exit_status != -1)
+		burned_coder = check_deadlines(self->table);
+		if (burned_coder != -1)
 		{
-			burned_coder = &self->table->coders[exit_status];
-			set_coder_task(burned_coder, BURNOUT);
-			report_task(self->table, burned_coder);
+			set_coder_task(&self->table->coders[burned_coder], BURNOUT);
+			report_task(self->table, &self->table->coders[burned_coder]);
+			set_stop(self->table);
 			return (NULL);
 		}
 	}

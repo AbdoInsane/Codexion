@@ -53,13 +53,13 @@ re: fclean all
 #=== Debugging
 
 grind: $(NAME)
-	@valgrind --leak-check=full ./$(NAME) $(ARGS_$(I))
+	@valgrind --leak-check=full ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
 
 helgrind: $(NAME)
-	@valgrind --tool=helgrind --history-level=none ./$(NAME) $(ARGS_$(I))
+	@valgrind --tool=helgrind --history-level=none ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
 
 mem: $(NAME)
-	@valgrind --tool=memcheck ./$(NAME) $(ARGS_$(I)
+	@valgrind --tool=memcheck ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
 
 gdb: $(NAME)
 	@gdb -tui --args ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))

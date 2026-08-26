@@ -21,7 +21,7 @@ static void	get_coder_data(t_coder *coder, int *id, t_task *task)
 	pthread_mutex_unlock(&coder->mutex);
 }
 
-static void	display_event(t_table *table, t_task task, long time, int id)
+static void	display_event(t_task task, long time, int id)
 {
 	if (task == COMPILING)
 	{
@@ -34,10 +34,7 @@ static void	display_event(t_table *table, t_task task, long time, int id)
 	else if (task == REFACTORING)
 		printf("%ld %d is refactoring\n", time, id);
 	else if (task == BURNOUT)
-	{
 		printf("%ld %d burned out\n", time, id);
-		set_stop(table);
-	}
 }
 
 void	report_task(t_table *table, t_coder *coder)
@@ -51,6 +48,6 @@ void	report_task(t_table *table, t_coder *coder)
 	time = get_time_ms() - table->monitor->time_ms;
 	get_coder_data(coder, &id, &task);
 	pthread_mutex_lock(&table->logger_mutex);
-	display_event(table, task, time, id);
+	display_event(task, time, id);
 	pthread_mutex_unlock(&table->logger_mutex);
 }

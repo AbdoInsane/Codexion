@@ -4,3 +4,4 @@ codexion
 vgcore.*
 .clangd
 .cache/
+compile_commands.json

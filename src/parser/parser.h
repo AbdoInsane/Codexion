@@ -14,7 +14,13 @@
 # define PARSER_H
 
 # include "memory/memory.h"
+# include <stdio.h>
 # include <string.h>
+
+# define GRN "\e[0;32m"
+# define RED "\e[0;31m"
+# define YEL "\e[0;33m"
+# define RESET "\e[0m"
 
 typedef enum t_scheduler
 {
@@ -36,5 +42,5 @@ typedef struct s_config
 
 t_config		*get_config(int argc, char **argv, t_memory **memory);
 char			*ft_strdup(char *str, t_memory **memory);
-int				ft_isdigit(const char *str);
+int				ft_isnumber(const char *str);
 #endif

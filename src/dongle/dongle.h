@@ -38,6 +38,8 @@ typedef struct s_dongle
 	long			cooldown_end_ms;
 }					t_dongle;
 
+int					dongle_request(t_dongle *dongle, t_coder *coder,
+						t_scheduler scheduler);
 t_dongle			*dongle_init(t_table *table);
 int					acquire_dongles(t_coder *coder, t_scheduler sched);
 void				dongle_release(t_coder *coder);

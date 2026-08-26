@@ -17,11 +17,6 @@
 # include "table/table.h"
 # include <stdio.h>
 
-# define GRN "\e[0;32m"
-# define RED "\e[0;31m"
-# define YEL "\e[0;33m"
-# define RESET "\e[0m"
-
 void	report_task(t_table *table, t_coder *coder);
 
 #endif

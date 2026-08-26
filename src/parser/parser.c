@@ -21,13 +21,22 @@ static void	*get_args(int argc, char **argv, t_memory **memory)
 	args = NULL;
 	arg_i = 0;
 	if (argc != 9)
+	{
+		fprintf(stderr,
+			RED "Error: Invalid number of arguments\n" YEL "Arguments order:\n"
+			"1.\tnumber_of_coder\n2.\ttime_to_burnout\n3.\ttime_to_compile\n"
+			"4.\ttime_to_debug\n5.\ttime_to_refactor\n6.\tnumber_of_compiles\n"
+			"7.\tcooldown_time\n8.\tscheduler(fifo/edf)\n" RESET);
 		return (NULL);
+	}
 	args = ft_malloc(memory, sizeof(void *) * 8);
 	if (!args)
 		return (NULL);
 	while (arg_i < 8)
 	{
 		args[arg_i] = (char *)ft_strdup(argv[arg_i + 1], memory);
+		if (!args[arg_i])
+			return (NULL);
 		arg_i++;
 	}
 	return (args);
@@ -38,13 +47,26 @@ static int	validate_number(char *val, int arg_i)
 {
 	int	num;
 
-	if (!val || !ft_isdigit(val))
+	if (!val || !ft_isnumber(val))
+	{
+		fprintf(stderr, RED "Error: Argument %d is not a valid number\n" RESET,
+			arg_i + 1);
 		return (-1);
+	}
 	num = atoi(val);
 	if (num < 0)
+	{
+		fprintf(stderr, RED "Error: Argument %d must be positive\n" RESET, arg_i
+			+ 1);
 		return (-1);
+	}
 	if (arg_i != 6 && num == 0)
+	{
+		fprintf(stderr,
+			RED "Error: Argument %d must be "
+			"greater then zero\n" RESET, arg_i + 1);
 		return (-1);
+	}
 	return (num);
 }
 
@@ -52,11 +74,16 @@ static int	validate_number(char *val, int arg_i)
 static int	validate_scheduler(char *val)
 {
 	if (!val)
+	{
+		fprintf(stderr, RED "Error: Invalid Scheduler\n" RESET);
 		return (-1);
+	}
 	if (strcmp(val, "fifo") == 0)
 		return (FIFO);
 	if (strcmp(val, "edf") == 0)
 		return (EDF);
+	fprintf(stderr,
+		RED "Error: Invalid scheduler\n" YEL "USE: fifo/edf\n" RESET);
 	return (-1);
 }
 
