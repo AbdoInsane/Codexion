@@ -38,6 +38,7 @@ typedef struct s_coder
 	pthread_t		thread;
 	t_dongle		*d_left;
 	t_dongle		*d_right;
+	int				compile_times;
 	long			last_compile_time_ms;
 
 	t_table			*table;

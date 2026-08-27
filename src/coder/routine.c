@@ -73,13 +73,11 @@ void	*coder_routine(void *arg)
 {
 	t_coder	*self;
 	t_table	*table;
-	int		compiles;
 
 	self = (t_coder *)arg;
 	register_coder(self);
 	table = self->table;
-	compiles = 0;
-	while (compiles < table->config->number_of_compiles_required)
+	while (self->compile_times < table->config->number_of_compiles_required)
 	{
 		if (acquire_dongles(self, table->config->scheduler))
 			return (NULL);
@@ -88,7 +86,7 @@ void	*coder_routine(void *arg)
 		coder_task(self, DEBUGGING);
 		coder_task(self, REFACTORING);
 		coder_task(self, WAITING);
-		compiles++;
+		self->compile_times++;
 	}
 	coder_finish(self);
 	return (self);

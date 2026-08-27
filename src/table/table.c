@@ -6,7 +6,7 @@
 /*   By: abait-mo <abait-mo@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/24 08:11:56 by abait-mo          #+#    #+#             */
-/*   Updated: 2026/08/24 08:11:56 by abait-mo         ###   ########.fr       */
+/*   Updated: 2026/08/26 23:30:25 by abait-mo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,10 +35,18 @@ void	set_stop(t_table *table)
 	i = 0;
 	pthread_mutex_lock(&table->mutex);
 	table->stop = true;
-	pthread_mutex_unlock(&table->mutex);
 	pthread_cond_broadcast(&table->cond);
+	pthread_mutex_unlock(&table->mutex);
+	pthread_mutex_lock(&table->monitor->mutex);
+	pthread_cond_broadcast(&table->monitor->start_cond);
+	pthread_mutex_unlock(&table->monitor->mutex);
 	while (i < table->config->number_of_coders)
-		pthread_cond_broadcast(&table->dongles[i++].cond);
+	{
+		pthread_mutex_lock(&table->dongles[i].mutex);
+		pthread_cond_broadcast(&table->dongles[i].cond);
+		pthread_mutex_unlock(&table->dongles[i].mutex);
+		i++;
+	}
 }
 
 int	table_start(t_table *table)
@@ -61,6 +69,7 @@ t_table	*table_init(int argc, char **argv)
 		return (NULL);
 	table->stop = false;
 	table->memory = memory;
+	table->status = (t_table_status){0};
 	table->config = get_config(argc, argv, &table->memory);
 	if (!table->config)
 		return (ft_free(&table->memory), NULL);
@@ -68,10 +77,8 @@ t_table	*table_init(int argc, char **argv)
 	if (!table->dongles)
 		return (ft_free(&table->memory), NULL);
 	table->coders = coder_init(table);
-	if (!table->coders)
-		return (ft_free(&table->memory), NULL);
 	table->monitor = monitor_init(table);
-	if (!table->monitor)
+	if (!table->coders || !table->monitor)
 		return (ft_free(&table->memory), NULL);
 	pthread_mutex_init(&table->mutex, NULL);
 	pthread_cond_init(&table->cond, NULL);
@@ -81,10 +88,11 @@ t_table	*table_init(int argc, char **argv)
 
 void	table_destroy(t_table *table)
 {
-	monitor_destroy(table);
 	coder_destroy(table);
+	monitor_destroy(table);
 	dongle_destroy(table);
 	pthread_cond_destroy(&table->cond);
 	pthread_mutex_destroy(&table->mutex);
+	pthread_mutex_destroy(&table->logger_mutex);
 	ft_free(&table->memory);
 }

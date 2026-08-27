@@ -22,6 +22,8 @@ static bool	is_less(t_heap *heap, int a, int b)
 		return (false);
 	if (heap->orders[a].key != heap->orders[b].key)
 		return (heap->orders[a].key < heap->orders[b].key);
+	if (heap->orders[a].n_compiles != heap->orders[b].n_compiles)
+		return (heap->orders[a].n_compiles < heap->orders[b].n_compiles);
 	return (heap->orders[a].id < heap->orders[b].id);
 }
 
@@ -66,11 +68,11 @@ static void	heapify_down(t_heap *heap)
 	}
 }
 
-void	push_heap(t_heap *heap, long key, int id)
+void	push_heap(t_heap *heap, long key, int n_compiles, int id)
 {
 	if (!heap || heap->size >= heap->capacity)
 		return ;
-	heap->orders[heap->size] = (t_order){key, id};
+	heap->orders[heap->size] = (t_order){key, n_compiles, id};
 	heap->size++;
 	heapify_up(heap);
 }

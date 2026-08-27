@@ -29,7 +29,7 @@ static void	*get_args(int argc, char **argv, t_memory **memory)
 			"7.\tcooldown_time\n8.\tscheduler(fifo/edf)\n" RESET);
 		return (NULL);
 	}
-	args = ft_malloc(memory, sizeof(void *) * 8);
+	args = ft_malloc(memory, sizeof(char *) * 8);
 	if (!args)
 		return (NULL);
 	while (arg_i < 8)

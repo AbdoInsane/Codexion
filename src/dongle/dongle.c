@@ -13,20 +13,20 @@
 #include "coder/coder.h"
 #include "dongle.h"
 
-static bool	is_dongles_owned(t_coder *coder)
+static bool	is_dongles_owned(t_coder *coder, t_dongle *first, t_dongle *second)
 {
-	bool	left_acquired;
-	bool	right_acquired;
+	bool	first_acquired;
+	bool	second_acquired;
 
-	if (coder->d_left == coder->d_right)
+	if (first == second)
 		return (false);
-	pthread_mutex_lock(&coder->d_left->mutex);
-	left_acquired = coder->d_left->owner == coder->id;
-	pthread_mutex_unlock(&coder->d_left->mutex);
-	pthread_mutex_lock(&coder->d_right->mutex);
-	right_acquired = coder->d_right->owner == coder->id;
-	pthread_mutex_unlock(&coder->d_right->mutex);
-	return (left_acquired && right_acquired);
+	pthread_mutex_lock(&first->mutex);
+	first_acquired = first->owner == coder->id;
+	pthread_mutex_unlock(&first->mutex);
+	pthread_mutex_lock(&second->mutex);
+	second_acquired = second->owner == coder->id;
+	pthread_mutex_unlock(&second->mutex);
+	return (first_acquired && second_acquired);
 }
 
 int	acquire_dongles(t_coder *coder, t_scheduler sched)
@@ -44,11 +44,11 @@ int	acquire_dongles(t_coder *coder, t_scheduler sched)
 		first = coder->d_right;
 		second = coder->d_left;
 	}
-	while (!is_dongles_owned(coder) && !is_stop(coder->table))
+	while (!is_dongles_owned(coder, first, second) && !is_stop(coder->table))
 	{
 		if (dongle_request(first, coder, sched))
 			return (1);
-		if (is_dongles_owned(coder))
+		if (is_dongles_owned(coder, first, second))
 			break ;
 		if (dongle_request(second, coder, sched))
 			return (1);

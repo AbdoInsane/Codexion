@@ -17,6 +17,7 @@ int	monitor_start(t_table *table)
 	if (pthread_create(&table->monitor->thread, NULL, monitor_routine,
 			table->monitor))
 		return (1);
+	table->status.monitor_created = true;
 	return (0);
 }
 
@@ -39,7 +40,9 @@ t_monitor	*monitor_init(t_table *table)
 
 void	monitor_destroy(t_table *table)
 {
-	pthread_join(table->monitor->thread, NULL);
-	pthread_mutex_destroy(&table->monitor->mutex);
+	if (table->status.monitor_created)
+		pthread_join(table->monitor->thread, NULL);
 	pthread_cond_destroy(&table->monitor->cond);
+	pthread_mutex_destroy(&table->monitor->mutex);
+	pthread_cond_destroy(&table->monitor->start_cond);
 }

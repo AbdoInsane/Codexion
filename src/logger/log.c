@@ -13,14 +13,6 @@
 #include "coder/coder.h"
 #include "log.h"
 
-static void	get_coder_data(t_coder *coder, int *id, t_task *task)
-{
-	pthread_mutex_lock(&coder->mutex);
-	*task = coder->state;
-	*id = coder->id;
-	pthread_mutex_unlock(&coder->mutex);
-}
-
 static void	display_event(t_task task, long time, int id)
 {
 	if (task == COMPILING)
@@ -46,7 +38,10 @@ void	report_task(t_table *table, t_coder *coder)
 	if (is_stop(table))
 		return ;
 	time = get_time_ms() - table->monitor->time_ms;
-	get_coder_data(coder, &id, &task);
+	pthread_mutex_lock(&coder->mutex);
+	task = coder->state;
+	id = coder->id;
+	pthread_mutex_unlock(&coder->mutex);
 	pthread_mutex_lock(&table->logger_mutex);
 	display_event(task, time, id);
 	pthread_mutex_unlock(&table->logger_mutex);

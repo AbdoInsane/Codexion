@@ -15,12 +15,12 @@
 int	main(int argc, char **argv)
 {
 	t_table	*table;
+	int		exit_s;
 
 	table = table_init(argc, argv);
 	if (!table)
 		return (1);
-	if (table_start(table))
-		return (table_destroy(table), 1);
+	exit_s = table_start(table);
 	table_destroy(table);
-	return (0);
+	return (exit_s);
 }

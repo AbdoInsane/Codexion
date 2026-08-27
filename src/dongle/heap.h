@@ -18,6 +18,7 @@
 typedef struct s_order
 {
 	long	key;
+	int		n_compiles;
 	int		id;
 }			t_order;
 
@@ -28,7 +29,7 @@ typedef struct s_heap
 	t_order	*orders;
 }			t_heap;
 
-void		push_heap(t_heap *heap, long key, int id);
+void		push_heap(t_heap *heap, long key, int n_compiles, int id);
 int			pop_heap(t_heap *heap);
 
 #endif
