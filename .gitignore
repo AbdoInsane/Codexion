@@ -5,3 +5,4 @@ vgcore.*
 .clangd
 .cache/
 compile_commands.json
+test_logs/
