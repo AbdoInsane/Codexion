@@ -82,7 +82,8 @@ void	*coder_routine(void *arg)
 		if (acquire_dongles(self, table->config->scheduler))
 			return (NULL);
 		coder_task(self, COMPILING);
-		dongle_release(self);
+		dongle_release(self, self->d_left);
+		dongle_release(self, self->d_right);
 		coder_task(self, DEBUGGING);
 		coder_task(self, REFACTORING);
 		coder_task(self, WAITING);
