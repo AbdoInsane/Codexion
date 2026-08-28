@@ -28,6 +28,14 @@ static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 	dongle->heap->orders = ft_malloc(mem, sizeof(t_order) * size);
 	if (!dongle->heap->orders)
 		return (1);
+	push_heap(dongle->heap, 0, 0, i + 1);
+	if (size != 1)
+	{
+		if (i == 0)
+			push_heap(dongle->heap, 0, 0, size);
+		else
+			push_heap(dongle->heap, 0, 0, i);
+	}
 	return (0);
 }
 

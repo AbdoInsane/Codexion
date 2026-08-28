@@ -24,6 +24,8 @@ static bool	is_less(t_heap *heap, int a, int b)
 		return (heap->orders[a].key < heap->orders[b].key);
 	if (heap->orders[a].n_compiles != heap->orders[b].n_compiles)
 		return (heap->orders[a].n_compiles < heap->orders[b].n_compiles);
+	if ((heap->orders[a].id + heap->orders[b].id) % 2)
+		return (heap->orders[a].id % 2);
 	return (heap->orders[a].id < heap->orders[b].id);
 }
 
