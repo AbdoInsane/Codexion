@@ -13,27 +13,12 @@
 #include "coder/coder.h"
 #include "dongle.h"
 
-static bool	is_dongles_owned(t_coder *coder, t_dongle *first, t_dongle *second)
-{
-	bool	first_acquired;
-	bool	second_acquired;
-
-	if (first == second)
-		return (false);
-	pthread_mutex_lock(&first->mutex);
-	first_acquired = first->owner == coder->id;
-	pthread_mutex_unlock(&first->mutex);
-	pthread_mutex_lock(&second->mutex);
-	second_acquired = second->owner == coder->id;
-	pthread_mutex_unlock(&second->mutex);
-	return (first_acquired && second_acquired);
-}
-
 int	acquire_dongles(t_coder *coder, t_scheduler sched)
 {
 	t_dongle	*first;
 	t_dongle	*second;
 
+	(void)sched;
 	if (coder->d_left->id < coder->d_right->id)
 	{
 		first = coder->d_left;
@@ -44,35 +29,37 @@ int	acquire_dongles(t_coder *coder, t_scheduler sched)
 		first = coder->d_right;
 		second = coder->d_left;
 	}
-	while (!is_dongles_owned(coder, first, second) && !is_stop(coder->table))
-	{
-		if (dongle_request(first, coder, sched))
-			return (1);
-		if (is_dongles_owned(coder, first, second))
-			break ;
-		if (dongle_request(second, coder, sched))
-			return (1);
-	}
+	if (acquire_dongle(coder, first))
+		return (1);
+	if (acquire_dongle(coder, second))
+		return (1);
 	return (0);
 }
 
-void	dongle_release(t_coder *coder)
+void	dongle_release(t_coder *coder, t_dongle *dongle)
 {
+	long	key;
+	t_table	*table;
+	int		n_compiles;
 	long	cooldown_ms;
 
+	table = coder->table;
+	pthread_mutex_lock(&coder->mutex);
+	if (table->config->scheduler == EDF)
+		key = coder->last_compile_time_ms + table->config->time_to_burnout;
+	else
+		key = get_time_ms();
+	n_compiles = coder->compile_times + 1;
+	pthread_mutex_unlock(&coder->mutex);
 	cooldown_ms = coder->table->config->dongle_cooldown;
-	pthread_mutex_lock(&coder->d_left->mutex);
-	coder->d_left->owner = 0;
-	coder->d_left->state = COOLDOWN;
-	coder->d_left->cooldown_end_ms = get_time_ms() + cooldown_ms;
-	pthread_cond_broadcast(&coder->d_left->cond);
-	pthread_mutex_unlock(&coder->d_left->mutex);
-	pthread_mutex_lock(&coder->d_right->mutex);
-	coder->d_right->owner = 0;
-	coder->d_right->state = COOLDOWN;
-	coder->d_right->cooldown_end_ms = get_time_ms() + cooldown_ms;
-	pthread_cond_broadcast(&coder->d_right->cond);
-	pthread_mutex_unlock(&coder->d_right->mutex);
+	pthread_mutex_lock(&dongle->mutex);
+	dongle->owner = 0;
+	dongle->state = COOLDOWN;
+	dongle->cooldown_end_ms = get_time_ms() + cooldown_ms;
+	if (n_compiles < table->config->number_of_compiles_required)
+		push_heap(dongle->heap, key, n_compiles, coder->id);
+	pthread_cond_broadcast(&dongle->cond);
+	pthread_mutex_unlock(&dongle->mutex);
 }
 
 void	dongle_destroy(t_table *table)
