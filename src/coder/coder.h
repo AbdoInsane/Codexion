@@ -25,8 +25,6 @@ typedef enum e_task
 	COMPILING,
 	DEBUGGING,
 	REFACTORING,
-	ACQUIRING,
-	BURNOUT,
 	FINISHED,
 }					t_task;
 
