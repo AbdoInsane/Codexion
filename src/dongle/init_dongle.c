@@ -18,24 +18,22 @@ static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 	dongle->owner = 0;
 	dongle->state = FREE;
 	dongle->cooldown_end_ms = 0;
-	pthread_mutex_init(&dongle->mutex, NULL);
 	pthread_cond_init(&dongle->cond, NULL);
+	pthread_mutex_init(&dongle->mutex, NULL);
 	dongle->heap = ft_malloc(mem, sizeof(t_heap));
 	if (!dongle->heap)
 		return (1);
 	dongle->heap->size = 0;
 	dongle->heap->capacity = 2;
-	dongle->heap->orders = ft_malloc(mem, sizeof(t_order) * size);
+	dongle->heap->orders = ft_malloc(mem, sizeof(t_order)
+			* dongle->heap->capacity);
 	if (!dongle->heap->orders)
 		return (1);
 	push_heap(dongle->heap, 0, 0, i + 1);
-	if (size != 1)
-	{
-		if (i == 0)
-			push_heap(dongle->heap, 0, 0, size);
-		else
-			push_heap(dongle->heap, 0, 0, i);
-	}
+	if (i == 0 && size != 1)
+		push_heap(dongle->heap, 0, 0, size);
+	else if (size != 1)
+		push_heap(dongle->heap, 0, 0, i);
 	return (0);
 }
 
