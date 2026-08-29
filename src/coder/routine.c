@@ -14,11 +14,9 @@
 
 void	set_coder_task(t_coder *coder, t_task task)
 {
-	pthread_mutex_lock(&coder->mutex);
 	coder->state = task;
 	if (task == COMPILING)
 		coder->last_compile_time_ms = get_time_ms();
-	pthread_mutex_unlock(&coder->mutex);
 }
 
 static int	coder_task(t_coder *coder, t_task task)
@@ -37,10 +35,12 @@ static int	coder_task(t_coder *coder, t_task task)
 		task_time_ms = table->config->time_to_refactor;
 	else
 		return (1);
+	pthread_mutex_lock(&coder->mutex);
 	set_coder_task(coder, task);
 	report_task(table, coder);
-	if (wait_ms(table, &table->mutex, &table->cond, task_time_ms))
+	if (wait_ms(table, &coder->mutex, &table->cond, task_time_ms))
 		return (1);
+	pthread_mutex_unlock(&coder->mutex);
 	return (0);
 }
 
