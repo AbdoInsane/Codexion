@@ -64,26 +64,20 @@ void	*monitor_routine(void *arg)
 {
 	t_monitor	*self;
 	int			burned_coder;
+	bool		coders_finished;
 
 	self = (t_monitor *)arg;
 	wait_for_coders(self);
 	while (1)
 	{
 		pthread_mutex_lock(&self->mutex);
-		if (self->working_coders == 0)
-		{
-			pthread_mutex_unlock(&self->mutex);
-			break ;
-		}
+		coders_finished = self->working_coders == 0;
 		pthread_mutex_unlock(&self->mutex);
+		if (coders_finished)
+			break;
 		burned_coder = check_deadlines(self->table);
 		if (burned_coder != -1)
-		{
-			set_coder_task(&self->table->coders[burned_coder], BURNOUT);
-			report_task(self->table, &self->table->coders[burned_coder]);
-			set_stop(self->table);
-			return (NULL);
-		}
+			return (shutdown_simulation(burned_coder, self));
 	}
 	set_stop(self->table);
 	return (self);
