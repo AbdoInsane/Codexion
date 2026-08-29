@@ -32,7 +32,7 @@ static int	check_deadlines(t_table *table)
 		deadline = last_compile + table->config->time_to_burnout;
 		pthread_mutex_unlock(&table->monitor->mutex);
 		if (deadline < get_time_ms() && state != FINISHED)
-			return (i);
+			return (table->coders[i].id);
 		i++;
 	}
 	return (-1);
@@ -74,7 +74,7 @@ void	*monitor_routine(void *arg)
 		coders_finished = self->working_coders == 0;
 		pthread_mutex_unlock(&self->mutex);
 		if (coders_finished)
-			break;
+			break ;
 		burned_coder = check_deadlines(self->table);
 		if (burned_coder != -1)
 			return (shutdown_simulation(burned_coder, self));
