@@ -18,6 +18,7 @@ static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 	dongle->owner = 0;
 	dongle->state = FREE;
 	dongle->cooldown_end_ms = 0;
+	dongle->acquire_time_ms = 0;
 	pthread_cond_init(&dongle->cond, NULL);
 	pthread_mutex_init(&dongle->mutex, NULL);
 	dongle->heap = ft_malloc(mem, sizeof(t_heap));

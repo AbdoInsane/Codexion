@@ -49,6 +49,7 @@ int	acquire_dongle(t_coder *coder, t_dongle *dongle)
 	dongle->state = ACQUIRED;
 	dongle->owner = coder->id;
 	pop_heap(dongle->heap);
+	dongle->acquire_time_ms = get_time_ms();
 	pthread_mutex_unlock(&dongle->mutex);
 	return (0);
 }

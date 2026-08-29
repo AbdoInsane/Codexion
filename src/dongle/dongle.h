@@ -35,6 +35,7 @@ typedef struct s_dongle
 	int				owner;
 	t_state			state;
 	t_heap			*heap;
+	long			acquire_time_ms;
 	long			cooldown_end_ms;
 }					t_dongle;
 
