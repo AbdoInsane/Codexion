@@ -13,12 +13,24 @@
 #include "coder/coder.h"
 #include "log.h"
 
-static void	display_event(t_task task, long time, int id)
+static void	report_dongle(t_coder *coder, t_dongle *dongle)
+{
+	long	time;
+	long	acquire_time;
+
+	time = coder->table->monitor->time_ms;
+	pthread_mutex_lock(&dongle->mutex);
+	acquire_time = dongle->acquire_time_ms - time;
+	pthread_mutex_unlock(&dongle->mutex);
+	printf("%ld %d has taken a dongle\n", acquire_time, coder->id);
+}
+
+static void	display_event(t_coder *coder, t_task task, long time, int id)
 {
 	if (task == COMPILING)
 	{
-		printf("%ld %d has taken a dongle\n", time, id);
-		printf("%ld %d has taken a dongle\n", time, id);
+		report_dongle(coder, coder->d_left);
+		report_dongle(coder, coder->d_right);
 		printf("%ld %d is compiling\n", time, id);
 	}
 	else if (task == DEBUGGING)
@@ -27,7 +39,7 @@ static void	display_event(t_task task, long time, int id)
 		printf("%ld %d is refactoring\n", time, id);
 }
 
-void	*shutdown_simulation(int	burned_coder, t_monitor *monitor)
+void	*shutdown_simulation(int burned_coder, t_monitor *monitor)
 {
 	t_table	*table;
 	long	time;
@@ -35,10 +47,10 @@ void	*shutdown_simulation(int	burned_coder, t_monitor *monitor)
 	table = monitor->table;
 	set_stop(table);
 	pthread_mutex_lock(&table->logger_mutex);
-	time = get_time_ms()-monitor->time_ms;
+	time = get_time_ms() - monitor->time_ms;
 	printf("%ld %d burned out\n", time, burned_coder);
 	pthread_mutex_unlock(&table->logger_mutex);
-	return NULL;
+	return (NULL);
 }
 
 void	report_task(t_table *table, t_coder *coder)
@@ -54,6 +66,6 @@ void	report_task(t_table *table, t_coder *coder)
 	pthread_mutex_lock(&table->logger_mutex);
 	time = get_time_ms() - table->monitor->time_ms;
 	if (!is_stop(table))
-		display_event(task, time, id);
+		display_event(coder, task, time, id);
 	pthread_mutex_unlock(&table->logger_mutex);
 }
