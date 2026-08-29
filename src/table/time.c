@@ -33,9 +33,7 @@ int	wait_ms(t_table *table, pthread_mutex_t *mutex, pthread_cond_t *cond,
 	deadline.tv_nsec = ((now + ms) % 1000) * 1000000;
 	while (!is_stop(table))
 	{
-		pthread_mutex_lock(mutex);
 		exit_status = pthread_cond_timedwait(cond, mutex, &deadline);
-		pthread_mutex_unlock(mutex);
 		if (exit_status != 0)
 			break ;
 	}
