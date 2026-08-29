@@ -23,10 +23,10 @@ static void	*get_args(int argc, char **argv, t_memory **memory)
 	if (argc != 9)
 	{
 		fprintf(stderr,
-			RED "Error: Invalid number of arguments\n" YEL "Arguments order:\n"
-			"1.\tnumber_of_coder\n2.\ttime_to_burnout\n3.\ttime_to_compile\n"
-			"4.\ttime_to_debug\n5.\ttime_to_refactor\n6.\tnumber_of_compiles\n"
-			"7.\tcooldown_time\n8.\tscheduler(fifo/edf)\n" RESET);
+				RED "Error: Invalid number of arguments\n" YEL "Arguments order:\n"
+					"1.\tnumber_of_coder\n2.\ttime_to_burnout\n3.\ttime_to_compile\n"
+					"4.\ttime_to_debug\n5.\ttime_to_refactor\n6.\tnumber_of_compiles\n"
+					"7.\tcooldown_time\n8.\tscheduler(fifo/edf)\n" RESET);
 		return (NULL);
 	}
 	args = ft_malloc(memory, sizeof(char *) * 8);
@@ -63,8 +63,9 @@ static int	validate_number(char *val, int arg_i)
 	if (arg_i != 6 && num == 0)
 	{
 		fprintf(stderr,
-			RED "Error: Argument %d must be "
-			"greater then zero\n" RESET, arg_i + 1);
+				RED "Error: Argument %d must be "
+					"greater then zero\n" RESET,
+				arg_i + 1);
 		return (-1);
 	}
 	return (num);
@@ -92,7 +93,7 @@ static int	validate_scheduler(char *val)
 t_config	*get_config(int argc, char **argv, t_memory **memory)
 {
 	t_config	*valid_args;
-	int			*p;
+	int			*ptr;
 	void		**args;
 	int			arg_i;
 
@@ -102,15 +103,15 @@ t_config	*get_config(int argc, char **argv, t_memory **memory)
 	valid_args = ft_malloc(memory, sizeof(t_config));
 	if (!valid_args)
 		return (NULL);
-	p = (int *)valid_args;
 	arg_i = 0;
+	ptr = (int *)valid_args;
 	while (arg_i < 8)
 	{
-		if (arg_i < 7)
-			p[arg_i] = (int)validate_number((char *)args[arg_i], arg_i);
+		if (arg_i == 7)
+			ptr[arg_i] = validate_scheduler(args[arg_i]);
 		else
-			p[arg_i] = validate_scheduler(args[arg_i]);
-		if (p[arg_i] == -1)
+			ptr[arg_i] = (int)validate_number((char *)args[arg_i], arg_i);
+		if (ptr[arg_i] == -1)
 			return (NULL);
 		arg_i++;
 	}
