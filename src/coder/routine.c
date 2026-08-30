@@ -25,18 +25,16 @@ static int	coder_task(t_coder *coder, t_task task)
 	long	task_time_ms;
 
 	table = coder->table;
-	if (task == WAITING || task == FINISHED)
-		return (set_coder_task(coder, task), 0);
-	else if (task == COMPILING)
+	if (task == COMPILING)
 		task_time_ms = table->config->time_to_compile;
 	else if (task == DEBUGGING)
 		task_time_ms = table->config->time_to_debug;
 	else if (task == REFACTORING)
 		task_time_ms = table->config->time_to_refactor;
-	else
-		return (1);
 	pthread_mutex_lock(&coder->mutex);
 	set_coder_task(coder, task);
+	if (task == WAITING || task == FINISHED)
+		return (pthread_mutex_unlock(&coder->mutex), 0);
 	report_task(table, coder);
 	pthread_mutex_unlock(&coder->mutex);
 	if (sleep_coder_ms(coder, task_time_ms))
@@ -79,18 +77,20 @@ void	*coder_routine(void *arg)
 	table = self->table;
 	while (self->compile_times < table->config->number_of_compiles_required)
 	{
-		if (acquire_dongles(self, table->config->scheduler))
+		if (acquire_dongles(self))
 			return (NULL);
 		coder_task(self, COMPILING);
-		dongle_release(self, self->d_left);
-		dongle_release(self, self->d_right);
+		release_dongle(self, self->d_left);
+		release_dongle(self, self->d_right);
 		if (coder_task(self, DEBUGGING))
 			return (NULL);
 		if (coder_task(self, REFACTORING))
 			return (NULL);
 		if (coder_task(self, WAITING))
 			return (NULL);
+		pthread_mutex_lock(&self->mutex);
 		self->compile_times++;
+		pthread_mutex_unlock(&self->mutex);
 	}
 	coder_finish(self);
 	return (self);

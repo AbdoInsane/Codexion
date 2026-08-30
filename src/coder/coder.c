@@ -42,7 +42,7 @@ t_coder	*coder_init(t_table *table)
 	if (!coders)
 		return (NULL);
 	i = 0;
-	while (i < table->config->number_of_coders)
+	while (i < size)
 	{
 		coders[i].id = i + 1;
 		coders[i].table = table;
@@ -61,15 +61,17 @@ t_coder	*coder_init(t_table *table)
 void	coder_destroy(t_table *table)
 {
 	int		i;
-	int		n_coders;
+	int		total_coders;
+	int		created_coders;
 	t_coder	*coders;
 
 	i = 0;
-	n_coders = table->config->number_of_coders;
 	coders = table->coders;
-	while (i < n_coders)
+	created_coders = table->status.coders_created;
+	total_coders = table->config->number_of_coders;
+	while (i < total_coders)
 	{
-		if (i < table->status.coders_created && table->status.monitor_created)
+		if (i < created_coders && table->status.monitor_created)
 			pthread_join(coders[i].thread, NULL);
 		pthread_mutex_destroy(&coders[i].mutex);
 		pthread_cond_destroy(&coders[i].cond);
