@@ -31,10 +31,9 @@ typedef struct s_table_status
 typedef struct s_table
 {
 	t_config				*config;
-	t_monitor				*monitor;
-
 	t_memory				*memory;
 
+	t_monitor				*monitor;
 	t_coder					*coders;
 	t_dongle				*dongles;
 
@@ -42,15 +41,15 @@ typedef struct s_table
 
 	bool					stop;
 
-	pthread_mutex_t			mutex;
 	pthread_cond_t			cond;
+	pthread_mutex_t			mutex;
 	pthread_mutex_t			logger_mutex;
 }							t_table;
 
 t_table						*table_init(int argc, char **argv);
 int							table_start(t_table *table);
 void						table_destroy(t_table *table);
-void						set_stop(t_table *table);
+void						stop_simulation(t_table *table);
 bool						is_stop(t_table *table);
 
 long						get_time_ms(void);

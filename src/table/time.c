@@ -27,6 +27,8 @@ int	sleep_coder_ms(t_coder *coder, long sleep_ms)
 	struct timespec	sleep_time;
 	long			now;
 
+	if (sleep_ms <= 0)
+		return (is_stop(coder->table));
 	now = get_time_ms();
 	sleep_time.tv_sec = (now + sleep_ms) / 1000;
 	sleep_time.tv_nsec = ((now + sleep_ms) % 1000) * 1e6;

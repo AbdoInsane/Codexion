@@ -28,7 +28,7 @@ bool	is_stop(t_table *table)
 	return (stoped);
 }
 
-void	set_stop(t_table *table)
+void	stop_simulation(t_table *table)
 {
 	int	i;
 
@@ -76,15 +76,15 @@ t_table	*table_init(int argc, char **argv)
 	table->config = get_config(argc, argv, &table->memory);
 	if (!table->config)
 		return (ft_free(&table->memory), NULL);
-	table->dongles = dongle_init(table);
+	table->dongles = init_dongles(table);
 	if (!table->dongles)
 		return (ft_free(&table->memory), NULL);
 	table->coders = coder_init(table);
 	table->monitor = monitor_init(table);
 	if (!table->coders || !table->monitor)
 		return (ft_free(&table->memory), NULL);
-	pthread_mutex_init(&table->mutex, NULL);
 	pthread_cond_init(&table->cond, NULL);
+	pthread_mutex_init(&table->mutex, NULL);
 	pthread_mutex_init(&table->logger_mutex, NULL);
 	return (table);
 }
@@ -95,7 +95,7 @@ void	table_destroy(t_table *table)
 		pthread_join(table->monitor->thread, NULL);
 	coder_destroy(table);
 	monitor_destroy(table);
-	dongle_destroy(table);
+	destroy_dongles(table);
 	pthread_cond_destroy(&table->cond);
 	pthread_mutex_destroy(&table->mutex);
 	pthread_mutex_destroy(&table->logger_mutex);
