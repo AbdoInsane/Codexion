@@ -20,6 +20,8 @@
 # include <pthread.h>
 # include <unistd.h>
 
+# define HEAP_SIZE 2
+
 typedef enum s_state
 {
 	FREE,
@@ -43,9 +45,9 @@ int					dongle_request(t_dongle *dongle, t_coder *coder,
 						t_scheduler scheduler);
 
 int					acquire_dongle(t_coder *coder, t_dongle *dongle);
-t_dongle			*dongle_init(t_table *table);
-int					acquire_dongles(t_coder *coder, t_scheduler sched);
-void				dongle_release(t_coder *coder, t_dongle *dongle);
-void				dongle_destroy(t_table *table);
+t_dongle			*init_dongles(t_table *table);
+int					acquire_dongles(t_coder *coder);
+void				release_dongle(t_coder *coder, t_dongle *dongle);
+void				destroy_dongles(t_table *table);
 
 #endif
