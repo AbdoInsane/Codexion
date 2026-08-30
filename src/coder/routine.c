@@ -16,7 +16,10 @@ void	set_coder_task(t_coder *coder, t_task task)
 {
 	coder->state = task;
 	if (task == COMPILING)
+	{
+		coder->compile_times++;
 		coder->last_compile_time_ms = get_time_ms();
+	}
 }
 
 static int	coder_task(t_coder *coder, t_task task)
@@ -88,9 +91,6 @@ void	*coder_routine(void *arg)
 			return (NULL);
 		if (coder_task(self, WAITING))
 			return (NULL);
-		pthread_mutex_lock(&self->mutex);
-		self->compile_times++;
-		pthread_mutex_unlock(&self->mutex);
 	}
 	coder_finish(self);
 	return (self);

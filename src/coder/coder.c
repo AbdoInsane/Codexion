@@ -23,6 +23,8 @@ int	coder_start(t_table *table)
 	while (i < table->config->number_of_coders)
 	{
 		coder = &table->coders[i];
+		push_order(coder, coder->d_left);
+		push_order(coder, coder->d_right);
 		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
 			return (1);
 		i++;
