@@ -50,4 +50,6 @@ int					acquire_dongles(t_coder *coder);
 void				release_dongle(t_coder *coder, t_dongle *dongle);
 void				destroy_dongles(t_table *table);
 
+void				push_order(t_coder *coder, t_dongle *dongle);
+
 #endif

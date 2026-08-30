@@ -27,6 +27,32 @@ static int	cooldown_dongle(t_coder *coder, t_dongle *dongle)
 	return (0);
 }
 
+void	push_order(t_coder *coder, t_dongle *dongle)
+{
+	t_order		order;
+	t_table		*table;
+	t_scheduler	scheduler;
+
+	table = coder->table;
+	order = (t_order){0, 0, 0, coder->id};
+	scheduler = table->config->scheduler;
+	pthread_mutex_lock(&coder->mutex);
+	if (coder->compile_times >= table->config->number_of_compiles_required)
+	{
+		pthread_mutex_unlock(&coder->mutex);
+		return ;
+	}
+	if (scheduler == FIFO)
+		order.key = get_time_ms();
+	else
+		order = (t_order){.key = coder->last_compile_time_ms
+			+ table->config->time_to_burnout,
+			.n_compiles = coder->compile_times,
+			.is_odd = order.is_odd = (coder->id % 2), .id = coder->id};
+	pthread_mutex_unlock(&coder->mutex);
+	push_heap(dongle->heap, order);
+}
+
 int	acquire_dongle(t_coder *coder, t_dongle *dongle)
 {
 	t_order	*top_order;

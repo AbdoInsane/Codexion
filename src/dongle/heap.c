@@ -14,19 +14,24 @@
 
 static bool	is_less(t_heap *heap, int a, int b)
 {
+	t_order	*order_a;
+	t_order	*order_b;
+
+	order_a = &heap->orders[a];
+	order_b = &heap->orders[b];
 	if (!heap)
 		return (false);
 	if (a < 0 || a >= heap->size)
 		return (false);
 	if (b < 0 || b >= heap->size)
 		return (false);
-	if (heap->orders[a].key != heap->orders[b].key)
-		return (heap->orders[a].key < heap->orders[b].key);
-	if (heap->orders[a].n_compiles != heap->orders[b].n_compiles)
-		return (heap->orders[a].n_compiles < heap->orders[b].n_compiles);
-	if ((heap->orders[a].id + heap->orders[b].id) % 2)
-		return (heap->orders[a].id % 2);
-	return (heap->orders[a].id < heap->orders[b].id);
+	if (order_a->key != order_b->key)
+		return (order_a->key < order_b->key);
+	if (order_a->n_compiles != order_b->n_compiles)
+		return (order_a->n_compiles < order_b->n_compiles);
+	if (order_a->is_odd != order_b->is_odd)
+		return (order_a->is_odd);
+	return (0);
 }
 
 static void	heapify_up(t_heap *heap)
@@ -70,11 +75,11 @@ static void	heapify_down(t_heap *heap)
 	}
 }
 
-void	push_heap(t_heap *heap, long key, int n_compiles, int id)
+void	push_heap(t_heap *heap, t_order order)
 {
 	if (!heap || heap->size >= heap->capacity)
 		return ;
-	heap->orders[heap->size] = (t_order){key, n_compiles, id};
+	heap->orders[heap->size] = order;
 	heap->size++;
 	heapify_up(heap);
 }

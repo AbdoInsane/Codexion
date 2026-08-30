@@ -13,8 +13,9 @@
 #include "coder/coder.h"
 #include "dongle.h"
 
-static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
+static int	setup_dongle(t_dongle *dongle, t_table *table, int i, int size)
 {
+	(void)size;
 	dongle->id = i;
 	dongle->owner = 0;
 	dongle->state = FREE;
@@ -22,16 +23,15 @@ static int	setup_dongle(t_dongle *dongle, t_memory **mem, int i, int size)
 	dongle->acquire_time_ms = 0;
 	pthread_cond_init(&dongle->cond, NULL);
 	pthread_mutex_init(&dongle->mutex, NULL);
-	dongle->heap = ft_malloc(mem, sizeof(t_heap));
+	dongle->heap = ft_malloc(&table->memory, sizeof(t_heap));
 	if (!dongle->heap)
 		return (1);
 	dongle->heap->size = 0;
 	dongle->heap->capacity = HEAP_SIZE;
-	dongle->heap->orders = ft_malloc(mem, sizeof(t_order) * HEAP_SIZE);
+	dongle->heap->orders = ft_malloc(&table->memory, sizeof(t_order)
+			* HEAP_SIZE);
 	if (!dongle->heap->orders)
 		return (1);
-	push_heap(dongle->heap, 0, 0, i + 1);
-	push_heap(dongle->heap, 0, 0, ((i + size - 1) % size) + 1);
 	return (0);
 }
 
@@ -48,7 +48,7 @@ t_dongle	*init_dongles(t_table *table)
 	i = 0;
 	while (i < size)
 	{
-		if (setup_dongle(&dongles[i], &table->memory, i, size))
+		if (setup_dongle(&dongles[i], table, i, size))
 			return (NULL);
 		i++;
 	}
@@ -75,23 +75,12 @@ int	acquire_dongles(t_coder *coder)
 
 void	release_dongle(t_coder *coder, t_dongle *dongle)
 {
-	t_table	*table;
-	long	key;
-	int		n_compiles;
-
-	table = coder->table;
-	pthread_mutex_lock(&coder->mutex);
-	n_compiles = coder->compile_times + 1;
-	key = get_time_ms();
-	if (table->config->scheduler == EDF)
-		key = coder->last_compile_time_ms + table->config->time_to_burnout;
-	pthread_mutex_unlock(&coder->mutex);
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->owner = 0;
 	dongle->state = COOLDOWN;
-	dongle->cooldown_end_ms = get_time_ms() + table->config->dongle_cooldown;
-	if (n_compiles < table->config->number_of_compiles_required)
-		push_heap(dongle->heap, key, n_compiles, coder->id);
+	dongle->cooldown_end_ms = coder->last_compile_time_ms
+		+ coder->table->config->dongle_cooldown;
+	push_order(coder, dongle);
 	pthread_cond_broadcast(&dongle->cond);
 	pthread_mutex_unlock(&dongle->mutex);
 }
