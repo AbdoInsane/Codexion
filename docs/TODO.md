@@ -1,2 +1,11 @@
 - [x] Refactor time functions
-- [ ] Recheck the entire codebase
+- [x] Recheck the entire codebase
+    - [x] main.c
+    - [x] memory/
+    - [x] parser/
+    - [x] table/
+    - [x] monitor/
+    - [x] coder/
+    - [x] dongle/
+    - [x] logger/
+- [ ] Understand & Fix helgrind errors on large n_coders
