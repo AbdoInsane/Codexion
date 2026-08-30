@@ -15,11 +15,16 @@
 
 static int	dongle_cooldown(t_coder *coder, t_dongle *dongle)
 {
-	while (get_time_ms() < dongle->cooldown_end_ms)
+	long	cooldown_ms;
+
+	cooldown_ms = dongle->cooldown_end_ms - get_time_ms();
+	while (cooldown_ms > 0)
 	{
-		if (wait_ms(coder->table, &dongle->mutex, &dongle->cond,
-				dongle->cooldown_end_ms - get_time_ms()))
-			return (1);
+		pthread_mutex_unlock(&dongle->mutex);
+		if (sleep_coder_ms(coder, cooldown_ms))
+			return (pthread_mutex_lock(&dongle->mutex), 1);
+		pthread_mutex_lock(&dongle->mutex);
+		cooldown_ms = dongle->cooldown_end_ms - get_time_ms();
 	}
 	if (dongle->state == COOLDOWN)
 		dongle->state = FREE;
@@ -35,11 +40,11 @@ int	acquire_dongle(t_coder *coder, t_dongle *dongle)
 	while (!is_stop(coder->table))
 	{
 		if (dongle->state == COOLDOWN && dongle_cooldown(coder, dongle))
-			break;
+			break ;
 		if (top_order->id == coder->id && dongle->state == FREE)
-			break;
+			break ;
 		if (is_stop(coder->table))
-			break;
+			break ;
 		pthread_cond_wait(&dongle->cond, &dongle->mutex);
 	}
 	if (is_stop(coder->table))
