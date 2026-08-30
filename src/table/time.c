@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "coder/coder.h"
 #include "sys/time.h"
 #include "table.h"
 
@@ -21,21 +22,21 @@ long	get_time_ms(void)
 	return (tv.tv_sec * 1000 + tv.tv_usec / 1000);
 }
 
-int	wait_ms(t_table *table, pthread_mutex_t *mutex, pthread_cond_t *cond,
-		long ms)
+int	sleep_coder_ms(t_coder *coder, long sleep_ms)
 {
-	struct timespec	deadline;
+	struct timespec	sleep_time;
 	long			now;
-	int				exit_status;
 
 	now = get_time_ms();
-	deadline.tv_sec = (now + ms) / 1000;
-	deadline.tv_nsec = ((now + ms) % 1000) * 1000000;
-	while (!is_stop(table))
+	sleep_time.tv_sec = (now + sleep_ms) / 1000;
+	sleep_time.tv_nsec = ((now + sleep_ms) % 1000) * 1e6;
+	pthread_mutex_lock(&coder->mutex);
+	while (!is_stop(coder->table))
 	{
-		exit_status = pthread_cond_timedwait(cond, mutex, &deadline);
-		if (exit_status != 0)
+		if (pthread_cond_timedwait(&coder->cond, &coder->mutex,
+				&sleep_time) != 0)
 			break ;
 	}
-	return (is_stop(table));
+	pthread_mutex_unlock(&coder->mutex);
+	return (is_stop(coder->table));
 }

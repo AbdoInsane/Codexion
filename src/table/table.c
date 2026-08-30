@@ -45,6 +45,9 @@ void	set_stop(t_table *table)
 		pthread_mutex_lock(&table->dongles[i].mutex);
 		pthread_cond_broadcast(&table->dongles[i].cond);
 		pthread_mutex_unlock(&table->dongles[i].mutex);
+		pthread_mutex_lock(&table->coders[i].mutex);
+		pthread_cond_broadcast(&table->coders[i].cond);
+		pthread_mutex_unlock(&table->coders[i].mutex);
 		i++;
 	}
 }
@@ -88,6 +91,8 @@ t_table	*table_init(int argc, char **argv)
 
 void	table_destroy(t_table *table)
 {
+	if (table->status.monitor_created)
+		pthread_join(table->monitor->thread, NULL);
 	coder_destroy(table);
 	monitor_destroy(table);
 	dongle_destroy(table);

@@ -54,7 +54,6 @@ void						set_stop(t_table *table);
 bool						is_stop(t_table *table);
 
 long						get_time_ms(void);
-int							wait_ms(t_table *table, pthread_mutex_t *mutex,
-								pthread_cond_t *cond, long ms);
+int							sleep_coder_ms(t_coder *coder, long sleep_ms);
 
 #endif
