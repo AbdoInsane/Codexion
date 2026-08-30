@@ -46,10 +46,8 @@ void	*shutdown_simulation(int burned_coder, t_monitor *monitor)
 
 	table = monitor->table;
 	set_stop(table);
-	pthread_mutex_lock(&table->logger_mutex);
 	time = get_time_ms() - monitor->time_ms;
 	printf("%ld %d burned out\n", time, burned_coder);
-	pthread_mutex_unlock(&table->logger_mutex);
 	return (NULL);
 }
 
