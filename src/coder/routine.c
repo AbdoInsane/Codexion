@@ -38,9 +38,9 @@ static int	coder_task(t_coder *coder, t_task task)
 	pthread_mutex_lock(&coder->mutex);
 	set_coder_task(coder, task);
 	report_task(table, coder);
-	if (wait_ms(table, &coder->mutex, &table->cond, task_time_ms))
-		return (1);
 	pthread_mutex_unlock(&coder->mutex);
+	if (sleep_coder_ms(coder, task_time_ms))
+		return (1);
 	return (0);
 }
 
@@ -84,9 +84,12 @@ void	*coder_routine(void *arg)
 		coder_task(self, COMPILING);
 		dongle_release(self, self->d_left);
 		dongle_release(self, self->d_right);
-		coder_task(self, DEBUGGING);
-		coder_task(self, REFACTORING);
-		coder_task(self, WAITING);
+		if (coder_task(self, DEBUGGING))
+			return (NULL);
+		if (coder_task(self, REFACTORING))
+			return (NULL);
+		if (coder_task(self, WAITING))
+			return (NULL);
 		self->compile_times++;
 	}
 	coder_finish(self);

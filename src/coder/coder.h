@@ -31,6 +31,7 @@ typedef enum e_task
 typedef struct s_coder
 {
 	int				id;
+	pthread_cond_t	cond;
 	pthread_mutex_t	mutex;
 	t_task			state;
 	pthread_t		thread;

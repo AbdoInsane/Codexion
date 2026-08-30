@@ -52,6 +52,7 @@ t_coder	*coder_init(t_table *table)
 		coders[i].d_left = &table->dongles[i];
 		coders[i].d_right = &table->dongles[(i + 1) % size];
 		pthread_mutex_init(&coders[i].mutex, NULL);
+		pthread_cond_init(&coders[i].cond, NULL);
 		i++;
 	}
 	return (coders);
@@ -59,16 +60,19 @@ t_coder	*coder_init(t_table *table)
 
 void	coder_destroy(t_table *table)
 {
-	int	i;
-	int	n_coders;
+	int		i;
+	int		n_coders;
+	t_coder	*coders;
 
 	i = 0;
 	n_coders = table->config->number_of_coders;
+	coders = table->coders;
 	while (i < n_coders)
 	{
 		if (i < table->status.coders_created && table->status.monitor_created)
-			pthread_join(table->coders[i].thread, NULL);
-		pthread_mutex_destroy(&table->coders[i].mutex);
+			pthread_join(coders[i].thread, NULL);
+		pthread_mutex_destroy(&coders[i].mutex);
+		pthread_cond_destroy(&coders[i].cond);
 		i++;
 	}
 }
