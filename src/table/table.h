@@ -52,7 +52,7 @@ void						table_destroy(t_table *table);
 void						stop_simulation(t_table *table);
 bool						is_stop(t_table *table);
 
-long						get_time_ms(void);
+double						get_time_ms(void);
 int							sleep_coder_ms(t_coder *coder, long sleep_ms);
 
 #endif
