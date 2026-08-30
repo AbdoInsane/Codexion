@@ -1,0 +1,2 @@
+- [x] Refactor time functions
+- [ ] Recheck the entire codebase
