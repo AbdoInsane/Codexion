@@ -20,13 +20,13 @@
 
 typedef struct s_monitor
 {
-	pthread_t		thread;
 	long			time_ms;
-	pthread_cond_t	cond;
-	pthread_cond_t	start_cond;
-	pthread_mutex_t	mutex;
 	int				working_coders;
 	int				started_coders;
+	pthread_cond_t	start_cond;
+	pthread_t		thread;
+	pthread_mutex_t	mutex;
+	pthread_cond_t	cond;
 
 	t_table			*table;
 }					t_monitor;
