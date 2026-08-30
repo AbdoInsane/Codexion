@@ -18,8 +18,8 @@ static void	report_dongle(t_coder *coder, t_dongle *dongle)
 	long	time;
 	long	acquire_time;
 
-	time = coder->table->monitor->time_ms;
 	pthread_mutex_lock(&dongle->mutex);
+	time = coder->table->monitor->time_ms;
 	acquire_time = dongle->acquire_time_ms - time;
 	pthread_mutex_unlock(&dongle->mutex);
 	printf("%ld %d has taken a dongle\n", acquire_time, coder->id);
@@ -45,7 +45,7 @@ void	*shutdown_simulation(int burned_coder, t_monitor *monitor)
 	long	time;
 
 	table = monitor->table;
-	set_stop(table);
+	stop_simulation(table);
 	time = get_time_ms() - monitor->time_ms;
 	printf("%ld %d burned out\n", time, burned_coder);
 	return (NULL);
@@ -53,15 +53,13 @@ void	*shutdown_simulation(int burned_coder, t_monitor *monitor)
 
 void	report_task(t_table *table, t_coder *coder)
 {
-	long	time;
 	t_task	task;
 	int		id;
 
 	id = coder->id;
 	task = coder->state;
 	pthread_mutex_lock(&table->logger_mutex);
-	time = get_time_ms() - table->monitor->time_ms;
 	if (!is_stop(table))
-		display_event(coder, task, time, id);
+		display_event(coder, task, get_time_ms() - table->monitor->time_ms, id);
 	pthread_mutex_unlock(&table->logger_mutex);
 }
