@@ -78,9 +78,7 @@ void	release_dongle(t_coder *coder, t_dongle *dongle)
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->owner = 0;
 	dongle->state = COOLDOWN;
-	dongle->cooldown_end_ms = coder->last_compile_time_ms
-		+ coder->table->config->dongle_cooldown;
-	push_order(coder, dongle);
+	dongle->cooldown_end_ms = get_time_ms() + coder->table->config->dongle_cooldown;
 	pthread_cond_broadcast(&dongle->cond);
 	pthread_mutex_unlock(&dongle->mutex);
 }
