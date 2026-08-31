@@ -66,8 +66,11 @@ int	acquire_dongles(t_coder *coder)
 		coder->d_right}[coder->id == n_dongles];
 	second = (t_dongle *[2]){coder->d_right,
 		coder->d_left}[coder->id == n_dongles];
+
 	if (acquire_dongle(coder, first))
 		return (1);
+	if (first == second)
+		report_dongle(coder, first);
 	if (acquire_dongle(coder, second))
 		return (1);
 	return (0);
@@ -75,8 +78,8 @@ int	acquire_dongles(t_coder *coder)
 
 void	release_dongle(t_coder *coder, t_dongle *dongle)
 {
-	pthread_mutex_lock(&dongle->mutex);
 	push_order(coder, dongle);
+	pthread_mutex_lock(&dongle->mutex);
 	dongle->owner = 0;
 	dongle->state = COOLDOWN;
 	dongle->cooldown_end_ms = get_time_ms() + coder->table->config->dongle_cooldown;
