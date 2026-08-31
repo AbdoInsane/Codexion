@@ -13,7 +13,7 @@
 #include "coder/coder.h"
 #include "log.h"
 
-static void	report_dongle(t_coder *coder, t_dongle *dongle)
+void	report_dongle(t_coder *coder, t_dongle *dongle)
 {
 	long	time;
 	long	acquire_time;

@@ -18,6 +18,7 @@
 # include <stdio.h>
 
 void	*shutdown_simulation(int burned_coder, t_monitor *monitor);
+void	report_dongle(t_coder *coder, t_dongle *dongle);
 void	report_task(t_table *table, t_coder *coder);
 
 #endif
