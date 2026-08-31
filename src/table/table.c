@@ -35,21 +35,21 @@ void	stop_simulation(t_table *table)
 	i = 0;
 	pthread_mutex_lock(&table->mutex);
 	table->stop = true;
-	pthread_cond_broadcast(&table->cond);
 	pthread_mutex_unlock(&table->mutex);
-	pthread_mutex_lock(&table->monitor->mutex);
-	pthread_cond_broadcast(&table->monitor->start_cond);
-	pthread_mutex_unlock(&table->monitor->mutex);
 	while (i < table->config->number_of_coders)
 	{
+		pthread_mutex_lock(&table->coders[i].mutex);
+		pthread_cond_broadcast(&table->coders[i].cond);
 		pthread_mutex_lock(&table->dongles[i].mutex);
 		pthread_cond_broadcast(&table->dongles[i].cond);
 		pthread_mutex_unlock(&table->dongles[i].mutex);
-		pthread_mutex_lock(&table->coders[i].mutex);
-		pthread_cond_broadcast(&table->coders[i].cond);
 		pthread_mutex_unlock(&table->coders[i].mutex);
 		i++;
 	}
+	pthread_mutex_lock(&table->monitor->mutex);
+	while (table->monitor->working_coders)
+		pthread_cond_wait(&table->monitor->cond, &table->monitor->mutex);
+	pthread_mutex_unlock(&table->monitor->mutex);
 }
 
 int	table_start(t_table *table)
@@ -91,10 +91,8 @@ t_table	*table_init(int argc, char **argv)
 
 void	table_destroy(t_table *table)
 {
-	if (table->status.monitor_created)
-		pthread_join(table->monitor->thread, NULL);
-	coder_destroy(table);
 	monitor_destroy(table);
+	coder_destroy(table);
 	destroy_dongles(table);
 	pthread_cond_destroy(&table->cond);
 	pthread_mutex_destroy(&table->mutex);

@@ -53,6 +53,7 @@ static void	coder_finish(t_coder *coder)
 	coder_task(coder, FINISHED);
 	pthread_mutex_lock(&monitor->mutex);
 	monitor->working_coders--;
+	pthread_cond_broadcast(&monitor->cond);
 	pthread_mutex_unlock(&monitor->mutex);
 }
 
@@ -81,16 +82,16 @@ void	*coder_routine(void *arg)
 	while (self->compile_times < table->config->number_of_compiles_required)
 	{
 		if (acquire_dongles(self))
-			return (NULL);
+			break;
 		coder_task(self, COMPILING);
 		release_dongle(self, self->d_left);
 		release_dongle(self, self->d_right);
 		if (coder_task(self, DEBUGGING))
-			return (NULL);
+			break;
 		if (coder_task(self, REFACTORING))
-			return (NULL);
+			break;
 		if (coder_task(self, WAITING))
-			return (NULL);
+			break;
 	}
 	coder_finish(self);
 	return (self);
