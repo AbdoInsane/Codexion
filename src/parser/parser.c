@@ -60,7 +60,7 @@ static int	validate_number(char *val, int arg_i)
 			+ 1);
 		return (-1);
 	}
-	if (arg_i != 6 && num == 0)
+	if (arg_i < 5 && num == 0)
 	{
 		fprintf(stderr,
 			RED "Error: Argument %d must be "
