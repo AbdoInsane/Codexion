@@ -13,20 +13,6 @@
 #include "coder/coder.h"
 #include "dongle.h"
 
-static int	cooldown_dongle(t_coder *coder, t_dongle *dongle)
-{
-	while (get_time_ms() < dongle->cooldown_end_ms)
-	{
-		pthread_mutex_unlock(&dongle->mutex);
-		if (sleep_coder_ms(coder, dongle->cooldown_end_ms - (long)get_time_ms()))
-			return (pthread_mutex_lock(&dongle->mutex), 1);
-		pthread_mutex_lock(&dongle->mutex);
-	}
-	if (dongle->state == COOLDOWN)
-		dongle->state = FREE;
-	return (0);
-}
-
 void	push_order(t_coder *coder, t_dongle *dongle)
 {
 	t_order		order;
@@ -49,8 +35,10 @@ void	push_order(t_coder *coder, t_dongle *dongle)
 			+ table->config->time_to_burnout,
 			.n_compiles = coder->compile_times,
 			.is_odd = order.is_odd = (coder->id % 2), .id = coder->id};
-	pthread_mutex_unlock(&coder->mutex);
+	pthread_mutex_lock(&dongle->mutex);
 	push_heap(dongle->heap, order);
+	pthread_mutex_unlock(&dongle->mutex);
+	pthread_mutex_unlock(&coder->mutex);
 }
 
 int	acquire_dongle(t_coder *coder, t_dongle *dongle)
@@ -61,8 +49,10 @@ int	acquire_dongle(t_coder *coder, t_dongle *dongle)
 	top_order = &dongle->heap->orders[0];
 	while (!is_stop(coder->table))
 	{
-		if (dongle->state == COOLDOWN && cooldown_dongle(coder, dongle))
+		if (cooldown_ms(coder->table, dongle))
 			break ;
+		if (dongle->state == COOLDOWN)
+			dongle->state = FREE;
 		if (top_order->id == coder->id && dongle->state == FREE)
 			break ;
 		if (is_stop(coder->table))
