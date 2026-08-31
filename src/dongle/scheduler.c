@@ -18,7 +18,7 @@ static int	cooldown_dongle(t_coder *coder, t_dongle *dongle)
 	while (get_time_ms() < dongle->cooldown_end_ms)
 	{
 		pthread_mutex_unlock(&dongle->mutex);
-		if (sleep_coder_ms(coder, dongle->cooldown_end_ms - get_time_ms()))
+		if (sleep_coder_ms(coder, dongle->cooldown_end_ms - (long)get_time_ms()))
 			return (pthread_mutex_lock(&dongle->mutex), 1);
 		pthread_mutex_lock(&dongle->mutex);
 	}
