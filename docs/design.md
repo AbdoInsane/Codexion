@@ -119,3 +119,39 @@ Thread-safe event logging with relative timestamps.
     `get_coder_data`: Reads coder id and state under coder mutex.
     `display_event`: Formats and prints event based on task (COMPILING prints two "has taken a dongle" lines + "is compiling"; others print single line).
     `report_task`: Called by coder/monitor to log state changes; computes relative time from monitor start; returns early if stop signaled; uses `logger_mutex` to serialize stdout.
+
+
+
+
+# Mutex lock ordering
+
+## Coder_routine
+
+### register_coder
+[monitor->mutex]
+
+### acquire_dongle
+[dongle->mutex]
+[table->mutex]
+
+### sleep_coder_ms
+[coder->mutex]
+[table->mutex]
+
+### coder_task
+[coder->mutex]
+[table->logger_mutex]
+[dongle->mutex]
+
+### push_order
+[coder->mutex]
+[dongle->mutex]
+
+### release_dongle
+[dongle->mutex]
+
+## Monitor_routine
+
+### wait_for_coders
+[monitor->mutex]
+[coder->mutex]
