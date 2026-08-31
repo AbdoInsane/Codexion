@@ -31,7 +31,7 @@ static bool	is_less(t_heap *heap, int a, int b)
 		return (order_a->n_compiles < order_b->n_compiles);
 	if (order_a->is_odd != order_b->is_odd)
 		return (order_a->is_odd);
-	return (0);
+	return (order_a->id < order_b->id);
 }
 
 static void	heapify_up(t_heap *heap)
