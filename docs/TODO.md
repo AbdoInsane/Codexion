@@ -8,4 +8,6 @@
     - [x] coder/
     - [x] dongle/
     - [x] logger/
-- [ ] Understand & Fix helgrind errors on large n_coders
+- [X] Understand & Fix helgrind errors on large n_coders
+- [X] Monitor waits for all coders to exit in shutdown
+- [ ] This test should run with no burnout ./codexion 5 3000 200 200 200 10 400 fifo
