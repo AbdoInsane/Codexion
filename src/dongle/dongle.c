@@ -77,8 +77,7 @@ int	acquire_dongles(t_coder *coder)
 
 void	release_dongle(t_coder *coder, t_dongle *dongle)
 {
-	if (coder->table->config->scheduler == EDF)
-		push_order(coder, dongle);
+	push_order(coder, dongle);
 	pthread_mutex_lock(&dongle->mutex);
 	dongle->owner = 0;
 	dongle->state = COOLDOWN;

@@ -29,6 +29,8 @@ void	push_order(t_coder *coder, t_dongle *dongle)
 	}
 	if (scheduler == FIFO)
 		order = (t_order){get_time_ms(), 0, 0, coder->id};
+	else if (scheduler == LIFO)
+		order = (t_order){-get_time_ms(), 0, 0, coder->id};
 	else
 		order = (t_order){.key = coder->last_compile_time_ms
 			+ table->config->time_to_burnout,
@@ -44,8 +46,6 @@ int	acquire_dongle(t_coder *coder, t_dongle *dongle)
 {
 	t_order	*top_order;
 
-	if (coder->table->config->scheduler != EDF)
-		push_order(coder, dongle);
 	pthread_mutex_lock(&dongle->mutex);
 	top_order = &dongle->heap->orders[0];
 	while (!is_stop(coder->table))
