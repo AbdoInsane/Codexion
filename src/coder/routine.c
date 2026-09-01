@@ -82,16 +82,16 @@ void	*coder_routine(void *arg)
 	while (self->compile_times < table->config->number_of_compiles_required)
 	{
 		if (acquire_dongles(self))
-			break;
+			break ;
 		coder_task(self, COMPILING);
 		release_dongle(self, self->d_left);
 		release_dongle(self, self->d_right);
 		if (coder_task(self, DEBUGGING))
-			break;
+			break ;
 		if (coder_task(self, REFACTORING))
-			break;
+			break ;
 		if (coder_task(self, WAITING))
-			break;
+			break ;
 	}
 	coder_finish(self);
 	return (self);
