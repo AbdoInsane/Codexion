@@ -40,10 +40,10 @@ void	stop_simulation(t_table *table)
 	{
 		pthread_mutex_lock(&table->coders[i].mutex);
 		pthread_cond_broadcast(&table->coders[i].cond);
+		pthread_mutex_unlock(&table->coders[i].mutex);
 		pthread_mutex_lock(&table->dongles[i].mutex);
 		pthread_cond_broadcast(&table->dongles[i].cond);
 		pthread_mutex_unlock(&table->dongles[i].mutex);
-		pthread_mutex_unlock(&table->coders[i].mutex);
 		i++;
 	}
 	pthread_mutex_lock(&table->monitor->mutex);

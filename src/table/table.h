@@ -53,7 +53,7 @@ void						stop_simulation(t_table *table);
 bool						is_stop(t_table *table);
 
 double						get_time_ms(void);
-int                         cooldown_ms(t_table *table, t_dongle *dongle);
+int							cooldown_ms(t_table *table, t_dongle *dongle);
 int							sleep_coder_ms(t_coder *coder, long sleep_ms);
 
 #endif

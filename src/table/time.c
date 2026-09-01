@@ -51,12 +51,12 @@ int	cooldown_ms(t_table *table, t_dongle *dongle)
 	now = get_time_ms();
 	sleep_time.tv_sec = (dongle->cooldown_end_ms) / 1000;
 	sleep_time.tv_nsec = ((dongle->cooldown_end_ms) % 1000) * 1e6;
-
 	if (dongle->state != COOLDOWN || now >= dongle->cooldown_end_ms)
 		return (is_stop(table));
 	while (!is_stop(table))
 	{
-		if (pthread_cond_timedwait(&dongle->cond, &dongle->mutex, &sleep_time) != 0)
+		if (pthread_cond_timedwait(&dongle->cond, &dongle->mutex,
+				&sleep_time) != 0)
 			break ;
 	}
 	return (is_stop(table));
