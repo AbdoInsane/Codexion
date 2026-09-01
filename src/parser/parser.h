@@ -25,6 +25,7 @@
 typedef enum t_scheduler
 {
 	FIFO,
+	LIFO,
 	EDF,
 }				t_scheduler;
 
