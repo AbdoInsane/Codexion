@@ -91,8 +91,10 @@ t_table	*table_init(int argc, char **argv)
 
 void	table_destroy(t_table *table)
 {
-	monitor_destroy(table);
+	if (table->status.monitor_created)
+		pthread_join(table->monitor->thread, NULL);
 	coder_destroy(table);
+	monitor_destroy(table);
 	destroy_dongles(table);
 	pthread_cond_destroy(&table->cond);
 	pthread_mutex_destroy(&table->mutex);
