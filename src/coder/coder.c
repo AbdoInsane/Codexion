@@ -14,7 +14,7 @@
 #include "logger/log.h"
 #include "table/table.h"
 
-int	coder_start(t_table *table)
+int	start_odd_coders(t_table *table)
 {
 	t_coder	*coder;
 	int		i;
@@ -22,17 +22,52 @@ int	coder_start(t_table *table)
 	i = 0;
 	while (i < table->config->number_of_coders)
 	{
-		coder = &table->coders[i];
-		if (table->config->scheduler == EDF)
+		if (i % 2 == 0)
 		{
-			push_order(coder, coder->d_left);
-			push_order(coder, coder->d_right);
+			i++;
+			continue ;
 		}
+		coder = &table->coders[i];
+		push_order(coder, coder->d_left);
+		push_order(coder, coder->d_right);
 		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
 			return (1);
 		i++;
 		table->status.coders_created++;
 	}
+	return (0);
+}
+
+int	start_even_coders(t_table *table)
+{
+	t_coder	*coder;
+	int		i;
+
+	i = 0;
+	while (i < table->config->number_of_coders)
+	{
+		if (i % 2 == 1)
+		{
+			i++;
+			continue ;
+		}
+		coder = &table->coders[i];
+		push_order(coder, coder->d_left);
+		push_order(coder, coder->d_right);
+		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
+			return (1);
+		i++;
+		table->status.coders_created++;
+	}
+	return (0);
+}
+
+int	coder_start(t_table *table)
+{
+	if (start_even_coders(table))
+		return (1);
+	if (start_odd_coders(table))
+		return (1);
 	return (0);
 }
 
