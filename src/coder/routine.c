@@ -34,6 +34,11 @@ static int	coder_task(t_coder *coder, t_task task)
 		task_time_ms = table->config->time_to_debug;
 	else if (task == REFACTORING)
 		task_time_ms = table->config->time_to_refactor;
+	else if (task == WAITING)
+	{
+		push_order(coder, coder->d_left);
+		push_order(coder, coder->d_right);
+	}
 	pthread_mutex_lock(&coder->mutex);
 	set_coder_task(coder, task);
 	if (task == WAITING || task == FINISHED)
