@@ -44,7 +44,11 @@ t_dongle	*init_dongles(t_table *table)
 	size = table->config->number_of_coders;
 	dongles = ft_malloc(&table->memory, sizeof(t_dongle) * size);
 	if (!dongles)
+	{
+		fprintf(stderr, RED "Malloc Error: Can't not allocate %zu byte\n" RESET,
+			sizeof(t_dongle) * size);
 		return (NULL);
+	}
 	i = 0;
 	while (i < size)
 	{
