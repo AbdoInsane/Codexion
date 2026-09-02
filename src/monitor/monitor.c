@@ -17,7 +17,7 @@ int	monitor_start(t_table *table)
 	if (pthread_create(&table->monitor->thread, NULL, monitor_routine,
 			table->monitor))
 		return (1);
-	table->status.monitor_created = true;
+	table->monitor->in_work = true;
 	return (0);
 }
 
@@ -30,8 +30,10 @@ t_monitor	*monitor_init(t_table *table)
 		return (NULL);
 	monitor->time_ms = 0;
 	monitor->table = table;
+	monitor->in_work = false;
+	monitor->working_coders = 0;
 	monitor->started_coders = 0;
-	monitor->working_coders = table->config->number_of_coders;
+	monitor->simulation_started = false;
 	pthread_cond_init(&monitor->cond, NULL);
 	pthread_mutex_init(&monitor->mutex, NULL);
 	pthread_cond_init(&monitor->start_cond, NULL);

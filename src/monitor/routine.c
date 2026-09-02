@@ -25,8 +25,11 @@ static int	check_deadlines(t_table *table)
 	while (i < table->config->number_of_coders)
 	{
 		pthread_mutex_lock(&table->coders[i].mutex);
+		if (table->coders[i].compile_times == 0)
+			last_compile = table->monitor->time_ms;
+		else
+			last_compile = table->coders[i].last_compile_time_ms;
 		state = table->coders[i].state;
-		last_compile = table->coders[i].last_compile_time_ms;
 		deadline = last_compile + table->config->time_to_burnout;
 		pthread_mutex_unlock(&table->coders[i].mutex);
 		if (deadline <= get_time_ms() && state != FINISHED)
@@ -36,24 +39,16 @@ static int	check_deadlines(t_table *table)
 	return (-1);
 }
 
-static void	wait_for_coders(t_monitor *monitor)
+static void	start_simulation(t_monitor *monitor)
 {
-	t_table	*table;
-	int		i;
+	int	required_coders;
 
-	table = monitor->table;
+	required_coders = monitor->table->config->number_of_coders;
 	pthread_mutex_lock(&monitor->mutex);
-	while (monitor->started_coders < table->config->number_of_coders)
+	while (monitor->working_coders < required_coders)
 		pthread_cond_wait(&monitor->cond, &monitor->mutex);
-	i = 0;
 	monitor->time_ms = get_time_ms();
-	while (i < table->config->number_of_coders)
-	{
-		pthread_mutex_lock(&table->coders[i].mutex);
-		table->coders[i].last_compile_time_ms = monitor->time_ms;
-		pthread_mutex_unlock(&table->coders[i].mutex);
-		i++;
-	}
+	monitor->simulation_started = true;
 	pthread_cond_broadcast(&monitor->start_cond);
 	pthread_mutex_unlock(&monitor->mutex);
 }
@@ -65,7 +60,7 @@ void	*monitor_routine(void *arg)
 	bool		coders_finished;
 
 	self = (t_monitor *)arg;
-	wait_for_coders(self);
+	start_simulation(self);
 	while (1)
 	{
 		pthread_mutex_lock(&self->mutex);

@@ -21,8 +21,10 @@
 typedef struct s_monitor
 {
 	long			time_ms;
+	bool			in_work;
 	int				working_coders;
 	int				started_coders;
+	bool			simulation_started;
 	pthread_cond_t	start_cond;
 	pthread_t		thread;
 	pthread_mutex_t	mutex;
