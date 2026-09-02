@@ -47,6 +47,7 @@ void	stop_simulation(t_table *table)
 		i++;
 	}
 	pthread_mutex_lock(&table->monitor->mutex);
+	pthread_cond_broadcast(&table->monitor->start_cond);
 	while (table->monitor->working_coders)
 		pthread_cond_wait(&table->monitor->cond, &table->monitor->mutex);
 	pthread_mutex_unlock(&table->monitor->mutex);
@@ -54,11 +55,10 @@ void	stop_simulation(t_table *table)
 
 int	table_start(t_table *table)
 {
-	if (monitor_start(table))
-		return (1);
-	if (coder_start(table))
-		return (1);
-	return (0);
+	if (!coder_start(table) && !monitor_start(table))
+		return (0);
+	stop_simulation(table);
+	return (1);
 }
 
 t_table	*table_init(int argc, char **argv)
@@ -72,7 +72,6 @@ t_table	*table_init(int argc, char **argv)
 		return (NULL);
 	table->stop = false;
 	table->memory = memory;
-	table->status = (t_table_status){0};
 	table->config = get_config(argc, argv, &table->memory);
 	if (!table->config)
 		return (ft_free(&table->memory), NULL);
@@ -91,7 +90,7 @@ t_table	*table_init(int argc, char **argv)
 
 void	table_destroy(t_table *table)
 {
-	if (table->status.monitor_created)
+	if (table->monitor->in_work)
 		pthread_join(table->monitor->thread, NULL);
 	coder_destroy(table);
 	monitor_destroy(table);

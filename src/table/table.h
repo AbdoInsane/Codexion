@@ -22,12 +22,6 @@ typedef struct s_dongle		t_dongle;
 typedef struct s_memory		t_memory;
 typedef struct s_monitor	t_monitor;
 
-typedef struct s_table_status
-{
-	bool					monitor_created;
-	int						coders_created;
-}							t_table_status;
-
 typedef struct s_table
 {
 	t_config				*config;
@@ -36,8 +30,6 @@ typedef struct s_table
 	t_monitor				*monitor;
 	t_coder					*coders;
 	t_dongle				*dongles;
-
-	t_table_status			status;
 
 	bool					stop;
 
