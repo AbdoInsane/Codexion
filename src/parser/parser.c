@@ -23,10 +23,10 @@ static void	*get_args(int argc, char **argv, t_memory **memory)
 	if (argc != 9)
 	{
 		fprintf(stderr,
-				RED "Error: Invalid number of arguments\n" YEL "Arguments order:\n"
-					"1.\tnumber_of_coder\n2.\ttime_to_burnout\n3.\ttime_to_compile\n"
-					"4.\ttime_to_debug\n5.\ttime_to_refactor\n6.\tnumber_of_compiles\n"
-					"7.\tcooldown_time\n8.\tscheduler(fifo/edf)\n" RESET);
+			RED "Error: Invalid number of arguments\n" YEL "Arguments order:\n"
+			"1.\tnumber_of_coder\n2.\ttime_to_burnout\n3.\ttime_to_compile\n"
+			"4.\ttime_to_debug\n5.\ttime_to_refactor\n6.\tnumber_of_compiles\n"
+			"7.\tcooldown_time\n8.\tscheduler(fifo/edf)\n" RESET);
 		return (NULL);
 	}
 	args = ft_malloc(memory, sizeof(char *) * 8);
@@ -63,9 +63,9 @@ static int	validate_number(char *val, int arg_i)
 	if (arg_i < 5 && num == 0)
 	{
 		fprintf(stderr,
-				RED "Error: Argument %d must be "
-					"greater then zero\n" RESET,
-				arg_i + 1);
+			RED "Error: Argument %d must be "
+			"greater then zero\n" RESET,
+			arg_i + 1);
 		return (-1);
 	}
 	return (num);
