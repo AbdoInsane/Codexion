@@ -31,9 +31,14 @@ int	start_odd_coders(t_table *table)
 		push_order(coder, coder->d_left);
 		push_order(coder, coder->d_right);
 		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
+		{
+			fprintf(stderr,
+				RED "Threads Error: Failed to create thread #%d\n" RESET, i
+				+ 1);
 			return (1);
+		}
+		coder->in_work = true;
 		i++;
-		table->status.coders_created++;
 	}
 	return (0);
 }
@@ -55,9 +60,14 @@ int	start_even_coders(t_table *table)
 		push_order(coder, coder->d_left);
 		push_order(coder, coder->d_right);
 		if (pthread_create(&coder->thread, NULL, coder_routine, coder))
+		{
+			fprintf(stderr,
+				RED "Threads Error: Failed to create thread #%d\n" RESET, i
+				+ 1);
 			return (1);
+		}
+		coder->in_work = true;
 		i++;
-		table->status.coders_created++;
 	}
 	return (0);
 }
@@ -87,6 +97,7 @@ t_coder	*coder_init(t_table *table)
 		coders[i].id = i + 1;
 		coders[i].table = table;
 		coders[i].state = WAITING;
+		coders[i].in_work = false;
 		coders[i].compile_times = 0;
 		coders[i].last_compile_time_ms = 0;
 		coders[i].d_left = &table->dongles[i];
@@ -102,16 +113,14 @@ void	coder_destroy(t_table *table)
 {
 	int		i;
 	int		total_coders;
-	int		created_coders;
 	t_coder	*coders;
 
 	i = 0;
 	coders = table->coders;
-	created_coders = table->status.coders_created;
 	total_coders = table->config->number_of_coders;
 	while (i < total_coders)
 	{
-		if (i < created_coders && table->status.monitor_created)
+		if (coders[i].in_work)
 			pthread_join(coders[i].thread, NULL);
 		pthread_mutex_destroy(&coders[i].mutex);
 		pthread_cond_destroy(&coders[i].cond);

@@ -32,6 +32,7 @@ typedef struct s_coder
 {
 	int				id;
 	t_task			state;
+	bool			in_work;
 	int				compile_times;
 	long			last_compile_time_ms;
 	t_dongle		*d_right;

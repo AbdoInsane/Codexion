@@ -53,11 +53,11 @@ static void	coder_finish(t_coder *coder)
 	coder_task(coder, FINISHED);
 	pthread_mutex_lock(&monitor->mutex);
 	monitor->working_coders--;
-	pthread_cond_broadcast(&monitor->cond);
+	pthread_cond_signal(&monitor->cond);
 	pthread_mutex_unlock(&monitor->mutex);
 }
 
-static void	register_coder(t_coder *coder)
+static int	register_coders(t_coder *coder)
 {
 	t_monitor	*monitor;
 	t_table		*table;
@@ -65,21 +65,26 @@ static void	register_coder(t_coder *coder)
 	table = coder->table;
 	monitor = table->monitor;
 	pthread_mutex_lock(&monitor->mutex);
-	monitor->started_coders++;
+	monitor->working_coders++;
 	pthread_cond_signal(&monitor->cond);
-	pthread_cond_wait(&monitor->start_cond, &monitor->mutex);
+	while (!monitor->simulation_started && !is_stop(table))
+		pthread_cond_wait(&monitor->start_cond, &monitor->mutex);
 	pthread_mutex_unlock(&monitor->mutex);
+	return (is_stop(table));
 }
 
 void	*coder_routine(void *arg)
 {
 	t_coder	*self;
 	t_table	*table;
+	int		req_compiles;
 
 	self = (t_coder *)arg;
-	register_coder(self);
 	table = self->table;
-	while (self->compile_times < table->config->number_of_compiles_required)
+	req_compiles = table->config->number_of_compiles_required;
+	if (register_coders(self))
+		return (coder_finish(self), NULL);
+	while (self->compile_times < req_compiles)
 	{
 		if (acquire_dongles(self))
 			break ;
