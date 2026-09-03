@@ -53,13 +53,17 @@ A separate monitor thread watches all coders, detects burnout, and stops the sim
 - Deadlock prevention:
     Deadlock happens when multiple threads wait for each other to release a resource.
     
-    In our matter, it happens when all coders take their left/right dongle and wait for the other to release it
-    This way all coders will be stuck waiting for each other to release the dongle
-    And it will never happen, thats the *deadlock*.
-    There are several ways to prevent it, but i only used one.
+    In our matter, it happens when all coders take their left dongle and wait for the right dongle to be released,
+    while the right dongle is held by another coder who is also waiting for their right dongle.
+    This circular wait causes all coders to be stuck indefinitely — the classic *deadlock*.
+    
+    To prevent this, the program uses staggered thread startup:
     - reverse acquisition order:
         A very simple and effective technique, is the reverse the acquisition order for the last coder in the table.
         It works because the last coder breaks the circle by requesting the other dongle.
+    - Even-indexed coders are started first, then odd-indexed coders.
+    - This breaks the symmetry so not all coders attempt to acquire their left dongle simultaneously.
+    - Combined with the scheduler's queue, this ensures at least one coder can always acquire both dongles.
 
 - Starvation prevention (FIFO/EDF scheduling):
     Starvation happens when a thread is not given the CPU time it needs to complete its task.
@@ -79,17 +83,20 @@ A separate monitor thread watches all coders, detects burnout, and stops the sim
     It helps store the orders with the lowest value, which makes capable of being used in different scheduling algorithms.
     These scheduling mechanisms ensure that coders are given fair access to the dongles, preventing starvation and ensuring a smooth compilation process.
     
+
 - Cooldown handling (per-dongle wait):
-    When a dongle is released, it can't be acquired by any coder for a certain period of time.
-    After release the dongle is giving a COOLDOWN state and a available_at timestamp, which is used to determine when the dongle can be acquired again.
-    Coders who request a cooldown dongle will be slept using *pthread_cond_timedwait* for the remaining cooldown time before being woken up.
+    When a dongle is released, it enters a `COOLDOWN` state for `dongle_cooldown` milliseconds.
+    During cooldown, the dongle cannot be acquired by any coder.
+    A timestamp `cooldown_end_ms` is set, and coders wait using `pthread_cond_timedwait`
+    on the dongle's condition variable until the cooldown expires.
+    The dongle automatically transitions to `FREE` when the cooldown elapses.
 
 - Burnout detection (monitor thread, 10ms precision):
-    A separated monitor thread is used to detect burnout of coders.
-    It keeps track of coders deadline times and checks for a passed deadline.
-    When the monitor thread detects a passed deadline, it immediately stops the simulation.
-    When the simulation is stopped, All channels are broadcasted to notify the coders.
-    This ensures the burnout is detected under 10ms precision from the deadline time.
+    A dedicated monitor thread tracks all coders' deadlines.
+    Deadline = last_compile_time (or simulation start time if no compiles yet) + time_to_burnout.
+    The monitor polls deadlines and immediately stops the simulation when a deadline is missed.
+    On detection, it broadcasts on all condition variables to wake waiting coders.
+    The burnout message is printed as the last line, within 10ms of the actual deadline.
 
 - Log serialization (logger mutex):
     Log serialization is done using a logger mutex to prevent multiple coders from writing to the log file simultaneously.
@@ -105,8 +112,29 @@ A separate monitor thread watches all coders, detects burnout, and stops the sim
     In case of a burnout, the logger will stop coders from logging and a `burned out` message will be printed last.
 
 - N=1 edge case (single dongle, must burn out):
-    When a single coder is passed to the program, that coder only finds one dongle available, so it must burn out.
-    The coder only acquires the only dongle, and stucks waiting for the other one (which he already has), which burns out after the deadline.
+    With one coder, there is only one dongle.
+    The coder attempts to acquire the same dongle twice (left and right are identical).
+    The second acquisition blocks indefinitely because the coder already holds the dongle.
+    The monitor detects the missed deadline and prints `burned out` as required.
 
 ## Thread Synchronization Mechanisms
-<!-- List mutexes, condition variables, lock hierarchy, and 2-3 race prevention examples with code location references. -->
+Thread synchronization controls how multiple threads access shared resources to prevent data inconsistency and race conditions.
+
+**Mutexes** protect shared data from concurrent access:
+- Each `t_coder` has a `mutex` protecting its state, compile count, and last compile time.
+- Each `t_dongle` has a `mutex` protecting its state, owner, heap, and cooldown timestamp.
+- The `t_monitor` has a `mutex` protecting `working_coders`, `started_coders`, and `simulation_started`.
+- The `t_table` has a `mutex` for the global `stop` flag, and a `logger_mutex` for serialized output.
+- All shared struct fields are accessed only while holding the corresponding mutex.
+
+**Condition variables** coordinate thread execution:
+- Each `t_coder` has a `cond` for `sleep_coder_ms` (timed waits for compile/debug/refactor).
+- Each `t_dongle` has a `cond` for waiters in `acquire_dongle` and for cooldown expiration.
+- The `t_monitor` has `cond` for `working_coders` changes and `start_cond` for simulation start synchronization.
+- `pthread_cond_wait`/`pthread_cond_timedwait` are used with associated mutexes held.
+- `pthread_cond_broadcast`/`pthread_cond_signal` wake waiting threads on state changes.
+
+**Min-heap per dongle** implements the scheduling queue:
+- Requests are pushed with scheduler-specific keys (timestamp, deadline).
+- `pop_heap` grants the dongle to the highest-priority waiter.
+- Heap operations are protected by the dongle's mutex.
