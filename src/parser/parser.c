@@ -81,8 +81,6 @@ static int	validate_scheduler(char *val)
 	}
 	if (strcmp(val, "fifo") == 0)
 		return (FIFO);
-	if (strcmp(val, "lifo") == 0)
-		return (LIFO);
 	if (strcmp(val, "edf") == 0)
 		return (EDF);
 	fprintf(stderr,
