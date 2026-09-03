@@ -1,0 +1,16 @@
+- [x] Refactor time functions
+- [x] Recheck the entire codebase
+    - [x] main.c
+    - [x] memory/
+    - [x] parser/
+    - [x] table/
+    - [x] monitor/
+    - [x] coder/
+    - [x] dongle/
+    - [x] logger/
+- [X] Understand & Fix helgrind errors on large n_coders
+- [X] Monitor waits for all coders to exit in shutdown
+- [X] This test should run with no burnout ./codexion 5 3000 200 200 200 10 400 fifo
+- [ ] Write the README.md file
+- [ ] Check the project
+- [ ] explore the theory

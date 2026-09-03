@@ -16,13 +16,23 @@ SRCS		:= $(MAIN) $(foreach module,$(MODULES),$(wildcard $(SRC_DIR)/$(module)/*.c
 OBJS		:= $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 CC		:= cc
-CFLAGS		:= -Wall -Wextra -Werror -pthread
+CFLAGS		:= -Wall -Wextra -Werror -pthread -g
 CPPFLAGS	:= -I$(SRC_DIR)
 
 RM		:= rm -rf
 
+I = 1
+
+ARGS_1 = 3 3000 200 200 200 2 800 edf
+ARGS_2 = 2 100 50 25 25 2 10 edf
+ARGS_3 = 3 3000 200 200 200 10 800 edf
+ARGS_4 = 1 3000 200 200 200 10 800 edf
+
 
 all: $(NAME)
+
+run:
+	./$(NAME) $(ARGS_$(I))
 
 $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -o $@
@@ -38,6 +48,27 @@ fclean: clean
 	@$(RM) $(NAME)
 
 re: fclean all
+
+
+#=== Debugging
+
+grind: $(NAME)
+	@valgrind --leak-check=full ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
+
+helgrind: $(NAME)
+	@valgrind --tool=helgrind --history-level=none ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
+
+mem: $(NAME)
+	@valgrind --tool=memcheck ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
+
+gdb: $(NAME)
+	@gdb -tui --args ./$(NAME) $(word 1,$(ARGS_$(I))) 100000000 $(wordlist 3,8,$(ARGS_$(I)))
+
+
+#=== Formatting
+
+format:
+	@c_formatter_42 $(MAIN) $(SRC_DIR)/*/*.h $(SRC_DIR)/*/*.c
 
 
 .PHONY: all clean fclean re grind helgrind mem gdb format
