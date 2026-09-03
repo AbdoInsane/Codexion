@@ -47,7 +47,7 @@ A separate monitor thread watches all coders, detects burnout, and stops the sim
 
 ## Resources
 - AI was used to find the best structure for the project.
-- [CodeDumpped Channel for CPU and OS scheduling](https://www.youtube.com/@CoreDumpped)
+- [CodeDumpped Channel for CPU execution cycle, OS scheduling, Process and Threads creation](https://www.youtube.com/@CoreDumpped)
 
 ## Blocking Cases Handled
 - Deadlock prevention:
