@@ -33,6 +33,7 @@ A separate monitor thread watches all coders, detects burnout, and stops the sim
 `make fclean`: removes the compiled program.
 
 ### Run
+```bash
 `./codexion 5 3000 200 200 200 10 400 fifo`
             |    |   |   |   |  |   |   |
             |    |   |   |   |  |   |   └─────── `scheduler` (fifo/edf)
@@ -43,7 +44,7 @@ A separate monitor thread watches all coders, detects burnout, and stops the sim
             |    |   └────────────────────────── `time_to_compile` (ms)
             |    └────────────────────────────── `time_to_burnout` (ms)
             └─────────────────────────────────── `number_of_coders`
-
+```
 
 ## Resources
 - AI was used to find the best structure for the project.
